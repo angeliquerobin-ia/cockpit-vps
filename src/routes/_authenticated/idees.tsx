@@ -131,11 +131,13 @@ function IdeasPage() {
         pillar_id: idea.pillar_id,
         channel: idea.channel,
         status: "en_redaction",
-        idea_id: idea.id,
       })
       .select("id")
       .single();
-    if (data) navigate({ to: "/studio", search: { post: data.id } });
+    if (!data) return;
+    await supabase.from("ideas").delete().eq("id", idea.id);
+    setIdeas((prev) => prev.filter((i) => i.id !== idea.id));
+    navigate({ to: "/studio", search: { post: data.id } });
   }
 
   const pillarById = useMemo(
