@@ -540,7 +540,7 @@ function AssistantPanel({
     setError(null);
     try {
       const { aiWrite } = await import("@/lib/ai-writer.functions");
-      const { data } = await aiWrite({
+      const result = await aiWrite({
         data: {
           mode,
           channel,
@@ -549,7 +549,7 @@ function AssistantPanel({
           currentContent: generated.trim() || currentContent,
         },
       });
-      setGenerated(data.text);
+      setGenerated(result.text);
     } catch (e: any) {
       setError(e?.message ?? "Génération impossible.");
     } finally {
