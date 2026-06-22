@@ -134,9 +134,9 @@ function IdeasPage() {
   }
 
   async function removeIdea(id: string) {
-    if (!confirm("Supprimer cette idée ?")) return;
+    if (!confirm("Mettre cette idée à la corbeille ?")) return;
     setIdeas((prev) => prev.filter((i) => i.id !== id));
-    await supabase.from("ideas").delete().eq("id", id);
+    await supabase.from("ideas").update({ deleted_at: new Date().toISOString() } as any).eq("id", id);
   }
 
   async function runSuggest() {
