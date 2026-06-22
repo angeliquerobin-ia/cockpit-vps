@@ -103,6 +103,7 @@ function IdeasPage() {
         .from("ideas")
         .select("id,title,note,pillar_id,channel,status,created_at")
         .eq("user_id", uid)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false }),
     ]);
     setPillars((p.data ?? []) as Pillar[]);
@@ -133,9 +134,9 @@ function IdeasPage() {
   }
 
   async function removeIdea(id: string) {
-    if (!confirm("Supprimer cette idée ?")) return;
+    if (!confirm("Mettre cette idée à la corbeille ?")) return;
     setIdeas((prev) => prev.filter((i) => i.id !== id));
-    await supabase.from("ideas").delete().eq("id", id);
+    await supabase.from("ideas").update({ deleted_at: new Date().toISOString() } as any).eq("id", id);
   }
 
   async function runSuggest() {
@@ -207,7 +208,7 @@ function IdeasPage() {
       .select("id")
       .single();
     if (!data) return;
-    await supabase.from("ideas").delete().eq("id", idea.id);
+    await supabase.from("ideas").update({ deleted_at: new Date().toISOString() } as any).eq("id", idea.id);
     setIdeas((prev) => prev.filter((i) => i.id !== idea.id));
     navigate({ to: "/studio", search: { post: data.id } });
   }

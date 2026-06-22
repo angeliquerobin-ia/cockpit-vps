@@ -156,6 +156,7 @@ function CompetitorsPage() {
         .from("competitors")
         .select("id,name,channel,handle,notes")
         .eq("user_id", uid)
+        .is("deleted_at", null)
         .order("created_at", { ascending: true }),
       supabase
         .from("competitor_metrics")
@@ -187,9 +188,9 @@ function CompetitorsPage() {
   }, [userId]);
 
   async function removeCompetitor(id: string) {
-    if (!confirm("Supprimer ce concurrent ?")) return;
+    if (!confirm("Mettre ce concurrent à la corbeille ?")) return;
     setCompetitors((prev) => prev.filter((c) => c.id !== id));
-    await supabase.from("competitors").delete().eq("id", id);
+    await supabase.from("competitors").update({ deleted_at: new Date().toISOString() } as any).eq("id", id);
   }
 
   async function saveCompetitor(patch: Partial<Competitor> & { id?: string }) {
