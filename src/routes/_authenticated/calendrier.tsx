@@ -326,7 +326,7 @@ function CalendarPage() {
                         onDragStart={() => setDragId(p.id)}
                         onDragEnd={() => setDragId(null)}
                         onClick={() =>
-                          navigate({ to: "/studio", search: { post: p.id } })
+                          setOpenedPost(p)
                         }
                         title={`${pillar?.name ?? "Sans pilier"}${p.channel ? " · " + CHANNEL_LABEL[p.channel] : ""}`}
                         className="text-left rounded-md px-2 py-1.5 text-xs leading-snug cursor-grab active:cursor-grabbing hover:brightness-95 transition-all"
