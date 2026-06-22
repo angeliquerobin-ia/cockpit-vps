@@ -257,6 +257,117 @@ function IdeasPage() {
         </button>
       </form>
 
+      {/* AI suggestions */}
+      <section className="bg-card rounded-2xl p-5 shadow-[var(--shadow-soft)] space-y-4">
+        <div className="flex items-start gap-4 flex-wrap">
+          <div className="flex-1 min-w-[220px] space-y-1">
+            <h2 className="text-2xl flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Suggérer des idées
+            </h2>
+            <p className="text-sm opacity-70">
+              <em>L'agent IA lit votre stratégie et vos piliers, puis propose des pistes à garder ou écarter.</em>
+            </p>
+          </div>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <input
+              value={suggestHint}
+              onChange={(e) => setSuggestHint(e.target.value)}
+              placeholder="Orientation facultative (saison, thème…)"
+              className="flex-1 md:w-72 rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              onClick={runSuggest}
+              disabled={suggesting}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              <Sparkles className="h-4 w-4" />
+              {suggesting ? "Génération…" : "Suggérer"}
+            </button>
+          </div>
+        </div>
+
+        {suggestError && (
+          <p className="text-sm text-destructive">{suggestError}</p>
+        )}
+
+        {suggestions.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {suggestions.map((s) => (
+              <article
+                key={s.key}
+                className="bg-popover rounded-xl p-4 space-y-3 border border-border/60"
+              >
+                <div className="flex items-start gap-2">
+                  <h3 className="text-lg leading-snug flex-1">{s.title}</h3>
+                  <button
+                    onClick={() => dismissSuggestion(s.key)}
+                    aria-label="Écarter"
+                    className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-foreground/60"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                {s.angle && (
+                  <p className="text-sm opacity-80 leading-relaxed">{s.angle}</p>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={s.pillar_id ?? ""}
+                    onChange={(e) =>
+                      updateSuggestion(s.key, {
+                        pillar_id: e.target.value || null,
+                      })
+                    }
+                    className="rounded-lg bg-background border border-input px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">— Pilier —</option>
+                    {pillars.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={s.channel ?? ""}
+                    onChange={(e) =>
+                      updateSuggestion(s.key, {
+                        channel: (e.target.value || null) as Channel | null,
+                      })
+                    }
+                    className="rounded-lg bg-background border border-input px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">— Canal —</option>
+                    {CHANNELS.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => addSuggestion(s)}
+                    disabled={s.added}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm hover:opacity-90 disabled:opacity-60 transition-opacity"
+                  >
+                    {s.added ? (
+                      <>
+                        <Check className="h-4 w-4" /> Ajoutée
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" /> Ajouter à mes idées
+                      </>
+                    )}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.15em] opacity-70">
