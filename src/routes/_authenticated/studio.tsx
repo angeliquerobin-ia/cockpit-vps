@@ -397,12 +397,43 @@ function PostEditor({
           </button>
           <button
             onClick={handleSave}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted transition-colors"
           >
             <Save className="h-4 w-4" /> Enregistrer
           </button>
+          <button
+            onClick={async () => {
+              await handleSave();
+              setShowPublish(true);
+            }}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 transition-opacity"
+          >
+            <Send className="h-4 w-4" /> Publier ou programmer
+          </button>
         </div>
       </div>
+
+      {showPublish && userId && (
+        <PublishDialog
+          post={{
+            id: post.id,
+            title,
+            channel: (channel || null) as string | null,
+            scheduled_at: scheduledAt
+              ? new Date(scheduledAt).toISOString()
+              : null,
+          }}
+          userId={userId}
+          onClose={() => setShowPublish(false)}
+          onPublished={({ status: s, scheduled_at }) => {
+            setStatus(s as Status);
+            if (scheduled_at)
+              setScheduledAt(toLocalInput(scheduled_at));
+            setShowPublish(false);
+            onRefresh();
+          }}
+        />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
         {/* Main editor */}
