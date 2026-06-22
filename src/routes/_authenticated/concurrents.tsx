@@ -65,6 +65,10 @@ function timeAgo(iso?: string | null) {
 
 function CompetitorsPage() {
   const refresh = useServerFn(refreshCompetitors);
+  const analyzeMetrics = useServerFn(analyzeCompetitorsMetrics);
+  const analyzeContent = useServerFn(analyzeCompetitorsContent);
+  const addIdea = useServerFn(createIdeaFromSuggestion);
+  const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [activeChannels, setActiveChannels] = useState<string[]>([]);
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
@@ -77,6 +81,70 @@ function CompetitorsPage() {
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+
+  // Analyse IA — chiffres
+  const [metricsAnalysis, setMetricsAnalysis] = useState<string | null>(null);
+  const [analyzingMetrics, setAnalyzingMetrics] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+
+  // Analyse IA — contenu
+  const [contentSelection, setContentSelection] = useState<Set<string>>(
+    new Set(),
+  );
+  const [contentAnalysis, setContentAnalysis] = useState<string | null>(null);
+  const [analyzingContent, setAnalyzingContent] = useState(false);
+  const [contentError, setContentError] = useState<string | null>(null);
+  const [addedIdeas, setAddedIdeas] = useState<Set<string>>(new Set());
+
+  async function handleAnalyzeMetrics() {
+    setAnalyzingMetrics(true);
+    setMetricsError(null);
+    try {
+      const r = await analyzeMetrics();
+      setMetricsAnalysis(r.analysis);
+    } catch (e: any) {
+      setMetricsError(e?.message ?? "Erreur inconnue");
+    } finally {
+      setAnalyzingMetrics(false);
+    }
+  }
+
+  async function handleAnalyzeContent() {
+    if (contentSelection.size === 0) return;
+    setAnalyzingContent(true);
+    setContentError(null);
+    try {
+      const r = await analyzeContent({
+        data: { competitorIds: Array.from(contentSelection) },
+      });
+      setContentAnalysis(r.analysis);
+    } catch (e: any) {
+      setContentError(e?.message ?? "Erreur inconnue");
+    } finally {
+      setAnalyzingContent(false);
+    }
+  }
+
+  function toggleSelection(id: string) {
+    setContentSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleAddIdea(title: string, note: string) {
+    const key = `${title}::${note}`;
+    if (addedIdeas.has(key)) return;
+    try {
+      await addIdea({ data: { title, note } });
+      setAddedIdeas((s) => new Set(s).add(key));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
