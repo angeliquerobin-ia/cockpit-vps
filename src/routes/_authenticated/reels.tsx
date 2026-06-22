@@ -15,9 +15,11 @@ import {
   Wand2,
   Lightbulb,
   PenLine,
+  Captions,
 } from "lucide-react";
 import { CHANNEL_LABELS, ALL_CHANNELS } from "@/lib/channel-prompts";
 import { convertReelToVertical } from "@/lib/cloudinary.functions";
+import { subtitleReel } from "@/lib/reels.functions";
 
 type Pillar = { id: string; name: string; color: string };
 type ReelStatus = "a_sous_titrer" | "sous_titre" | "publie";
