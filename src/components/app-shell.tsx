@@ -10,6 +10,7 @@ import {
   BarChart3,
   Users,
   Settings,
+  Trash2,
   LogOut,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -22,6 +23,7 @@ const nav = [
   { to: "/reels", label: "Réels", icon: Film },
   { to: "/statistiques", label: "Statistiques", icon: BarChart3 },
   { to: "/concurrents", label: "Concurrents", icon: Users },
+  { to: "/corbeille", label: "Corbeille", icon: Trash2 },
   { to: "/reglages", label: "Réglages", icon: Settings },
 ] as const;
 
