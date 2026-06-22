@@ -138,9 +138,9 @@ function StudioPage() {
   }
 
   async function removePost(id: string) {
-    if (!confirm("Supprimer ce post ?")) return;
+    if (!confirm("Mettre ce post à la corbeille ?")) return;
     setPosts((prev) => prev.filter((p) => p.id !== id));
-    await supabase.from("posts").delete().eq("id", id);
+    await supabase.from("posts").update({ deleted_at: new Date().toISOString() } as any).eq("id", id);
     if (selectedId === id) navigate({ to: "/studio", search: {} });
   }
 
