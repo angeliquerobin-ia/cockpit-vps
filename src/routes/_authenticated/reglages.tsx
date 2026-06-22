@@ -15,6 +15,7 @@ import {
   BarChart3,
   AlertTriangle,
   Check,
+  Info,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/reglages")({
@@ -255,6 +256,19 @@ function ReglagesPage() {
         title="Mon plan Metricool"
         subtitle="Le plan choisi adapte les fonctionnalités proposées dans toute l'app."
       >
+        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex gap-3">
+          <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <p className="text-sm leading-relaxed opacity-85">
+            <em>
+              Cockpit ne se connecte pas directement à Metricool. La
+              publication et la récupération des statistiques passent par vos
+              workflows N8N (configurés plus bas). Le plan sélectionné sert à
+              adapter ce que Cockpit vous propose — réseaux disponibles, quota
+              mensuel, profondeur d'historique.
+            </em>
+          </p>
+        </div>
+
         <div className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-6 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {(Object.keys(PLAN_INFO) as Plan[]).map((p) => {
