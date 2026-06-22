@@ -15,6 +15,7 @@ import {
   BarChart3,
   AlertTriangle,
   Check,
+  Info,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/reglages")({
