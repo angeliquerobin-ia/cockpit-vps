@@ -28,6 +28,7 @@ type Reel = {
   channel: string | null;
   status: ReelStatus;
   video_path: string;
+  transcription: string;
   created_at: string;
 };
 
