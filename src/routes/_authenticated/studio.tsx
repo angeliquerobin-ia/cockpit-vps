@@ -9,7 +9,9 @@ import {
   Sparkles,
   Save,
   ArrowLeft,
+  Send,
 } from "lucide-react";
+import { PublishDialog } from "@/components/publish-dialog";
 
 type Channel =
   | "linkedin"
