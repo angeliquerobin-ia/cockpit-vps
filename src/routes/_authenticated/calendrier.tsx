@@ -385,6 +385,135 @@ function CalendarPage() {
           ))}
         </div>
       )}
+
+      {openedPost && !publishPost && (
+        <PostCardModal
+          post={openedPost}
+          pillar={
+            openedPost.pillar_id ? pillarById[openedPost.pillar_id] : undefined
+          }
+          onClose={() => setOpenedPost(null)}
+          onOpenStudio={() => {
+            navigate({ to: "/studio", search: { post: openedPost.id } });
+          }}
+          onPublish={() => setPublishPost(openedPost)}
+        />
+      )}
+
+      {publishPost && userId && (
+        <PublishDialog
+          post={{
+            id: publishPost.id,
+            title: publishPost.title,
+            channel: publishPost.channel,
+            scheduled_at: publishPost.scheduled_at,
+          }}
+          userId={userId}
+          onClose={() => setPublishPost(null)}
+          onPublished={async () => {
+            setPublishPost(null);
+            setOpenedPost(null);
+            if (userId) await reloadPosts(userId);
+          }}
+        />
+      )}
     </div>
   );
 }
+
+function PostCardModal({
+  post,
+  pillar,
+  onClose,
+  onOpenStudio,
+  onPublish,
+}: {
+  post: Post;
+  pillar?: Pillar;
+  onClose: () => void;
+  onOpenStudio: () => void;
+  onPublish: () => void;
+}) {
+  const when = post.scheduled_at
+    ? new Date(post.scheduled_at).toLocaleString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+  return (
+    <div
+      className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-card rounded-2xl shadow-[var(--shadow-soft)] max-w-md w-full overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="h-1.5"
+          style={{ backgroundColor: pillar?.color ?? "#cdb48e" }}
+        />
+        <div className="p-6 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="text-2xl leading-tight">
+              {post.title.trim() || (
+                <span className="opacity-50">Sans titre</span>
+              )}
+            </h3>
+            <button
+              onClick={onClose}
+              className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted"
+              aria-label="Fermer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {pillar && (
+              <span
+                className="text-xs px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: pillar.color + "33",
+                  color: pillar.color,
+                }}
+              >
+                {pillar.name}
+              </span>
+            )}
+            {post.channel && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-foreground/80">
+                {CHANNEL_LABEL[post.channel]}
+              </span>
+            )}
+          </div>
+
+          {when && (
+            <p className="text-sm opacity-75">
+              <em>Programmé : {when}</em>
+            </p>
+          )}
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              onClick={onOpenStudio}
+              className="inline-flex items-center gap-2 rounded-lg border border-input px-3 py-2 text-sm hover:bg-muted transition-colors"
+            >
+              <Pencil className="h-4 w-4" /> Ouvrir dans le Studio
+            </button>
+            <button
+              onClick={onPublish}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm hover:opacity-90 transition-opacity"
+            >
+              <Send className="h-4 w-4" /> Publier ou programmer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
