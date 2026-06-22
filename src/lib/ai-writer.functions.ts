@@ -259,6 +259,7 @@ export const aiDeriveForChannel = createServerFn({ method: "POST" })
       .select("id,title,content,channel,pillar_id,idea_id")
       .eq("id", data.sourcePostId)
       .eq("user_id", userId)
+      .is("deleted_at", null)
       .maybeSingle();
     if (srcErr) throw new Error(srcErr.message);
     if (!source) throw new Error("Post d'origine introuvable.");
