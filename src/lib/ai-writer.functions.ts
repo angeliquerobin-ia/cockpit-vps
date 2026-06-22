@@ -13,6 +13,7 @@ const InputSchema = z.object({
     "more_embodied",
     "add_cta",
     "hashtags",
+    "spellcheck",
   ]),
   channel: z.string().nullable().optional(),
   pillarId: z.string().nullable().optional(),
