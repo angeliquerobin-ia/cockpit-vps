@@ -12,6 +12,9 @@ import {
   Pencil,
   Crop,
   Loader2,
+  Wand2,
+  Lightbulb,
+  PenLine,
 } from "lucide-react";
 import { CHANNEL_LABELS, ALL_CHANNELS } from "@/lib/channel-prompts";
 import { convertReelToVertical } from "@/lib/cloudinary.functions";
