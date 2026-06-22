@@ -310,7 +310,12 @@ function ReelsPage() {
         <EditModal
           reel={editing}
           pillars={pillars}
+          url={signedUrls[editing.id]}
           onClose={() => setEditing(null)}
+          onConverted={async () => {
+            if (userId) await loadAll(userId);
+            setEditing(null);
+          }}
           onSave={async (patch) => {
             await saveReel({ id: editing.id, ...patch });
             setEditing(null);
