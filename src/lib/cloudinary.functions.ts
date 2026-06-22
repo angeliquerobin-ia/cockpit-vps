@@ -111,7 +111,7 @@ export const convertReelToVertical = createServerFn({ method: "POST" })
     if (!reel.original_video_path) update.original_video_path = reel.video_path;
     const { error: updErr } = await supabase
       .from("reels")
-      .update(update)
+      .update(update as any)
       .eq("id", reel.id);
     if (updErr) throw updErr;
 
