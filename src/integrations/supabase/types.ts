@@ -74,6 +74,7 @@ export type Database = {
         Row: {
           channel: string
           created_at: string
+          deleted_at: string | null
           handle: string
           id: string
           name: string
@@ -84,6 +85,7 @@ export type Database = {
         Insert: {
           channel: string
           created_at?: string
+          deleted_at?: string | null
           handle: string
           id?: string
           name: string
@@ -94,6 +96,7 @@ export type Database = {
         Update: {
           channel?: string
           created_at?: string
+          deleted_at?: string | null
           handle?: string
           id?: string
           name?: string
@@ -140,6 +143,7 @@ export type Database = {
         Row: {
           channel: Database["public"]["Enums"]["pillar_channel"] | null
           created_at: string
+          deleted_at: string | null
           id: string
           note: string
           pillar_id: string | null
@@ -151,6 +155,7 @@ export type Database = {
         Insert: {
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
           note?: string
           pillar_id?: string | null
@@ -162,6 +167,7 @@ export type Database = {
         Update: {
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
           note?: string
           pillar_id?: string | null
@@ -185,6 +191,7 @@ export type Database = {
           channel: Database["public"]["Enums"]["pillar_channel"] | null
           content: string
           created_at: string
+          deleted_at: string | null
           id: string
           idea_id: string | null
           metricool_id: string | null
@@ -201,6 +208,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
           content?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           idea_id?: string | null
           metricool_id?: string | null
@@ -217,6 +225,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
           content?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           idea_id?: string | null
           metricool_id?: string | null
@@ -257,6 +266,7 @@ export type Database = {
         Row: {
           channel: Database["public"]["Enums"]["pillar_channel"] | null
           created_at: string
+          deleted_at: string | null
           id: string
           original_video_path: string | null
           pillar_id: string | null
@@ -272,6 +282,7 @@ export type Database = {
         Insert: {
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
           original_video_path?: string | null
           pillar_id?: string | null
@@ -287,6 +298,7 @@ export type Database = {
         Update: {
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
           created_at?: string
+          deleted_at?: string | null
           id?: string
           original_video_path?: string | null
           pillar_id?: string | null
