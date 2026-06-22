@@ -1,29 +1,62 @@
 ## Objectif
 
-Remplacer OpenAI direct par **OpenRouter** pour l'agent de rédaction, afin d'utiliser ta clé API OpenRouter (et plus de souci de quota OpenAI).
+Construire la page **Concurrents** : suivre des comptes concurrents, rafraîchir leurs métriques via le webhook N8N (`webhook_competitors` déjà dans `user_settings`), et afficher une comparaison côte à côte avec mes propres performances. Identité visuelle et navigation conservées.
 
-## Étapes
+## Modèle de données (migration)
 
-1. **Ajouter ta clé OpenRouter en secret** (`OPENROUTER_API_KEY`) — tu la colleras dans le formulaire sécurisé. À récupérer sur https://openrouter.ai/keys.
+Deux tables côté `public` :
 
-2. **Renommer le provider serveur** : `src/lib/openai-provider.server.ts` → `src/lib/openrouter-provider.server.ts`
-   - `baseURL` : `https://openrouter.ai/api/v1`
-   - Header `Authorization: Bearer ${apiKey}`
-   - (optionnel) headers `HTTP-Referer` et `X-Title` recommandés par OpenRouter pour identifier l'app.
+1. **`competitors`** — comptes suivis (CRUD utilisateur)
+   - `id uuid pk`, `user_id uuid` (FK `auth.users`)
+   - `name text not null`
+   - `channel text not null` (un des `active_channels`)
+   - `handle text not null` (identifiant / URL du compte)
+   - `notes text default ''` (observations libres)
+   - `created_at`, `updated_at` (trigger existant)
+   - RLS `auth.uid() = user_id`, GRANT authenticated + service_role
 
-3. **Mettre à jour `src/lib/ai-writer.functions.ts`** :
-   - Lire `process.env.OPENROUTER_API_KEY` au lieu d'`OPENAI_API_KEY`.
-   - Importer le nouveau provider.
-   - Modèle par défaut : `openai/gpt-5` (slug OpenRouter pour GPT-5).
+2. **`competitor_metrics`** — dernier snapshot renvoyé par N8N
+   - `competitor_id uuid pk` (FK `competitors` on delete cascade)
+   - `user_id uuid` (pour RLS)
+   - `metrics jsonb not null` (engagement, rythme de publication, croissance audience, etc. — schéma souple, on lit ce que renvoie Metricool)
+   - `fetched_at timestamptz default now()`
+   - RLS + GRANT idem
 
-4. **Test rapide** : tu cliques sur "Générer" dans l'éditeur depuis la preview pour valider que la réponse arrive bien.
+3. **`user_metrics_snapshot`** (1 ligne par utilisateur) — pour stocker mes propres chiffres renvoyés par N8N afin de les comparer
+   - `user_id uuid pk`, `metrics jsonb`, `fetched_at timestamptz`
+   - RLS + GRANT idem
+
+## Server function
+
+`src/lib/competitors.functions.ts` — `refreshCompetitors` (authentifié) :
+1. Lit `webhook_competitors` dans `user_settings`. Erreur claire s'il est vide.
+2. Lit la liste des `competitors` de l'utilisateur + ses `active_channels`.
+3. POST sur le webhook : `{ user_id, channels, competitors: [{id, channel, handle}] }`.
+4. Attend une réponse `{ self: {channel: metrics}, competitors: [{id, metrics}] }`.
+5. Upsert dans `competitor_metrics` (un row par concurrent) et `user_metrics_snapshot`.
+6. Retourne `{ fetched_at }`.
+
+Le CRUD des concurrents se fait directement avec `supabase` côté client (cohérent avec `idees.tsx`, `reels.tsx`).
+
+## UI — `src/routes/_authenticated/concurrents.tsx`
+
+Remplace le placeholder. Structure :
+
+- **En-tête** type Idées (kicker + h1 Cormorant + sous-titre italique).
+- **Barre d'action** : bouton « Rafraîchir » (icône `RefreshCw`) → appelle `refreshCompetitors`. État `loading` (spinner + texte « Connexion à Metricool… »). À droite : « Dernier rafraîchissement : il y a X min ».
+- **Section « Mes comptes suivis »** : grille de cartes (1 par concurrent) avec nom, badge canal, handle, extrait des notes ; actions hover Modifier / Supprimer (même pattern que `idees.tsx`).
+- **Bouton « Ajouter un concurrent »** ouvre une carte d'édition inline (nom, select canal parmi `active_channels`, handle, textarea notes).
+- **Section « Comparaison côte à côte »** : un tableau par canal présent.
+  - Colonnes : Indicateur | Moi | Concurrent 1 | Concurrent 2 | …
+  - Lignes : Engagement (%), Rythme de publication (/semaine), Croissance audience (30j, %).
+  - Mise en valeur des écarts : la meilleure valeur de la ligne en `text-primary` + flèche `ArrowUp`, les valeurs en deçà de la mienne avec opacité réduite + flèche `ArrowDown` terracotta. Différence numérique (`+12 pts`) en petit à côté.
+  - Si aucune métrique : encart doux invitant à cliquer sur Rafraîchir.
+
+Aucune autre page ni la navigation n'est modifiée. Toutes les données métriques viennent du webhook N8N — l'app n'appelle jamais Metricool.
 
 ## Détails techniques
 
-- OpenRouter est 100 % compatible OpenAI ; on garde le même client `@ai-sdk/openai-compatible` et `generateText` du AI SDK, donc zéro changement côté UI.
-- Le slug `openai/gpt-5` peut être remplacé par n'importe quel modèle dispo sur OpenRouter (Claude, Gemini, Llama, etc.) — on pourra le rendre configurable plus tard si tu veux.
-- Aucune modification de la base de données ni du frontend.
-
-## Question
-
-Tu confirmes qu'on garde **GPT-5 via OpenRouter** comme modèle par défaut, ou tu veux qu'on passe sur un autre (ex. `anthropic/claude-sonnet-4.5`, `google/gemini-2.5-pro`) ?
+- Pas de nouveau secret : on lit `webhook_competitors` en base.
+- Le fetch HTTP du webhook se fait côté serveur (server function) pour éviter CORS et exposer l'URL.
+- Types souples côté metrics (`Record<string, number>`) ; on calcule la "meilleure valeur" en triant numériquement par ligne.
+- Confirmer la suppression avec `confirm()` comme dans `idees.tsx`.
