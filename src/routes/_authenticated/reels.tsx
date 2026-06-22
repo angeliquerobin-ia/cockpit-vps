@@ -383,6 +383,8 @@ function ReelsPage() {
               onDelete={() => removeReel(r)}
               onTransformIdea={() => transformToIdea(r)}
               onTransformPost={() => transformToPost(r)}
+              onSubtitle={() => generateSubtitles(r)}
+              subtitling={subtitling === r.id}
             />
           ))}
         </div>
