@@ -47,6 +47,50 @@ export type Database = {
         }
         Relationships: []
       }
+      ideas: {
+        Row: {
+          channel: Database["public"]["Enums"]["pillar_channel"] | null
+          created_at: string
+          id: string
+          note: string
+          pillar_id: string | null
+          status: Database["public"]["Enums"]["idea_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["pillar_channel"] | null
+          created_at?: string
+          id?: string
+          note?: string
+          pillar_id?: string | null
+          status?: Database["public"]["Enums"]["idea_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["pillar_channel"] | null
+          created_at?: string
+          id?: string
+          note?: string
+          pillar_id?: string | null
+          status?: Database["public"]["Enums"]["idea_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ideas_pillar_id_fkey"
+            columns: ["pillar_id"]
+            isOneToOne: false
+            referencedRelation: "content_pillars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strategy_documents: {
         Row: {
           content: Json
@@ -79,6 +123,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      idea_status: "brouillon" | "a_developper" | "prete"
       pillar_channel:
         | "linkedin"
         | "instagram_coaching"
@@ -212,6 +257,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      idea_status: ["brouillon", "a_developper", "prete"],
       pillar_channel: [
         "linkedin",
         "instagram_coaching",
