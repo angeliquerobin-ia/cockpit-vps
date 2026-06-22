@@ -61,12 +61,27 @@ const statusLabel = (s: Status) =>
 
 function IdeasPage() {
   const navigate = useNavigate();
+  const suggestIdeasFn = useServerFn(aiSuggestIdeas);
   const [userId, setUserId] = useState<string | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [quickTitle, setQuickTitle] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // AI suggestions
+  type Suggestion = {
+    key: string;
+    title: string;
+    angle: string;
+    pillar_id: string | null;
+    channel: Channel | null;
+    added?: boolean;
+  };
+  const [suggestHint, setSuggestHint] = useState("");
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
 
   // filters
   const [fPillar, setFPillar] = useState<string>("all");
