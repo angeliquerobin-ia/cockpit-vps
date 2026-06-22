@@ -488,7 +488,7 @@ function CompetitorsPage() {
 function MarkdownLite({ text }: { text: string }) {
   // Lightweight renderer for ##, **, and lists. Keep terre/Cormorant identity.
   const lines = text.split("\n");
-  const out: JSX.Element[] = [];
+  const out: any[] = [];
   let list: string[] = [];
   const flushList = () => {
     if (list.length === 0) return;
