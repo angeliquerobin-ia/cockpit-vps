@@ -13,6 +13,7 @@ import {
   Send,
   Shuffle,
   Loader2,
+  SpellCheck,
 } from "lucide-react";
 import { PublishDialog } from "@/components/publish-dialog";
 import { aiDeriveForChannel } from "@/lib/ai-writer.functions";
