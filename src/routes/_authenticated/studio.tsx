@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Plus,
@@ -10,8 +11,11 @@ import {
   Save,
   ArrowLeft,
   Send,
+  Shuffle,
+  Loader2,
 } from "lucide-react";
 import { PublishDialog } from "@/components/publish-dialog";
+import { aiDeriveForChannel } from "@/lib/ai-writer.functions";
 
 type Channel =
   | "linkedin"
