@@ -287,6 +287,12 @@ function ReelsPage() {
         </p>
       )}
 
+      {transformFlash && (
+        <p className="text-sm rounded-lg bg-primary/10 text-foreground px-3 py-2">
+          <em>{transformFlash}</em>
+        </p>
+      )}
+
       <div className="flex items-center gap-3 flex-wrap">
         <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.15em] opacity-70">
           <Filter className="h-3.5 w-3.5" /> Filtrer
