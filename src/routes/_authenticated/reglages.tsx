@@ -597,7 +597,7 @@ function StatsWebhookHelp() {
   );
 }
 
-
+function Section({
   icon,
   title,
   subtitle,
