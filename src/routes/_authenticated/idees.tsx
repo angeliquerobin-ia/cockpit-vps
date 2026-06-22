@@ -246,6 +246,7 @@ function IdeasPage() {
                 pillar={idea.pillar_id ? pillarById[idea.pillar_id] : undefined}
                 onEdit={() => setEditingId(idea.id)}
                 onDelete={() => removeIdea(idea.id)}
+                onTransform={() => transformToPost(idea)}
               />
             ),
           )}
