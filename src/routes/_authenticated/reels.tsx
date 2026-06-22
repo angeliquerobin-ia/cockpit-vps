@@ -46,11 +46,13 @@ export const Route = createFileRoute("/_authenticated/reels")({
 });
 
 function ReelsPage() {
+  const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [reels, setReels] = useState<Reel[]>([]);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [transformFlash, setTransformFlash] = useState<string | null>(null);
   const [uploading, setUploading] = useState<{
     name: string;
     progress: number;
