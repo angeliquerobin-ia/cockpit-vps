@@ -84,6 +84,7 @@ function ReelsPage() {
         .from("reels")
         .select("id,title,pillar_id,channel,status,video_path,transcription,subtitled_video_url,created_at")
         .eq("user_id", uid)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false }),
     ]);
     const list = (r.data ?? []) as Reel[];
