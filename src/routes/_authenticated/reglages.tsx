@@ -98,6 +98,12 @@ const WEBHOOKS: {
     helper: "Met à jour la veille concurrentielle.",
   },
   {
+    key: "webhook_competitors_content",
+    label: "Analyse contenu concurrents",
+    helper:
+      "Récupère via Firecrawl les publications récentes des concurrents pour l'analyse IA.",
+  },
+  {
     key: "webhook_transcription",
     label: "Transcription des réels",
     helper: "Transcrit les vidéos importées dans la bibliothèque Réels.",
