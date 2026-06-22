@@ -582,6 +582,21 @@ function ReelCard({
               )}
             </div>
           )}
+          {hasTranscription && (
+            <button
+              onClick={onSubtitle}
+              disabled={subtitling}
+              aria-label="Générer les sous-titres"
+              title="Générer les sous-titres"
+              className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted text-foreground/70 disabled:opacity-40"
+            >
+              {subtitling ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Captions className="h-4 w-4" />
+              )}
+            </button>
+          )}
           <button
             onClick={onEdit}
             aria-label="Modifier"
