@@ -57,6 +57,7 @@ const statusLabel = (s: Status) =>
   STATUSES.find((x) => x.value === s)?.label ?? s;
 
 function IdeasPage() {
+  const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [ideas, setIdeas] = useState<Idea[]>([]);
