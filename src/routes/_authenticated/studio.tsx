@@ -13,6 +13,7 @@ import {
   Send,
   Shuffle,
   Loader2,
+  SpellCheck,
 } from "lucide-react";
 import { PublishDialog } from "@/components/publish-dialog";
 import { aiDeriveForChannel } from "@/lib/ai-writer.functions";
@@ -532,6 +533,10 @@ function PostEditor({
                 rows={18}
                 className="w-full bg-transparent border-0 outline-none text-base leading-relaxed resize-none placeholder:opacity-40"
               />
+              <SpellCheckButton
+                content={content}
+                onCorrected={setContent}
+              />
             </div>
           </div>
 
@@ -756,5 +761,71 @@ function AssistantPanel({
         </p>
       )}
     </aside>
+  );
+}
+
+function SpellCheckButton({
+  content,
+  onCorrected,
+}: {
+  content: string;
+  onCorrected: (text: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [flash, setFlash] = useState(false);
+
+  async function run() {
+    if (!content.trim() || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { aiWrite } = await import("@/lib/ai-writer.functions");
+      const result = await aiWrite({
+        data: {
+          mode: "spellcheck",
+          channel: null,
+          pillarId: null,
+          subject: "",
+          currentContent: content,
+        },
+      });
+      if (result.text) {
+        onCorrected(result.text);
+        setFlash(true);
+        setTimeout(() => setFlash(false), 2500);
+      }
+    } catch (e: any) {
+      setError(e?.message ?? "Correction impossible.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3 pt-2 border-t border-border/60">
+      <button
+        type="button"
+        onClick={run}
+        disabled={!content.trim() || busy}
+        className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted transition-colors disabled:opacity-40"
+      >
+        {busy ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <SpellCheck className="h-3.5 w-3.5" />
+        )}
+        {busy ? "Correction…" : "Corriger l'orthographe"}
+      </button>
+      <span className="text-[11px] opacity-60">
+        <em>Corrige les fautes sans changer vos tournures.</em>
+      </span>
+      {flash && (
+        <span className="text-[11px] text-primary"><em>Texte corrigé</em></span>
+      )}
+      {error && (
+        <span className="text-[11px] text-destructive">{error}</span>
+      )}
+    </div>
   );
 }

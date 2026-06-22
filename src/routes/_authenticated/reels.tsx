@@ -15,9 +15,11 @@ import {
   Wand2,
   Lightbulb,
   PenLine,
+  Captions,
 } from "lucide-react";
 import { CHANNEL_LABELS, ALL_CHANNELS } from "@/lib/channel-prompts";
 import { convertReelToVertical } from "@/lib/cloudinary.functions";
+import { subtitleReel } from "@/lib/reels.functions";
 
 type Pillar = { id: string; name: string; color: string };
 type ReelStatus = "a_sous_titrer" | "sous_titre" | "publie";
@@ -29,6 +31,7 @@ type Reel = {
   status: ReelStatus;
   video_path: string;
   transcription: string;
+  subtitled_video_url: string | null;
   created_at: string;
 };
 
@@ -81,7 +84,7 @@ function ReelsPage() {
         .order("created_at"),
       supabase
         .from("reels")
-        .select("id,title,pillar_id,channel,status,video_path,transcription,created_at")
+        .select("id,title,pillar_id,channel,status,video_path,transcription,subtitled_video_url,created_at")
         .eq("user_id", uid)
         .order("created_at", { ascending: false }),
     ]);
@@ -222,6 +225,39 @@ function ReelsPage() {
     navigate({ to: "/studio", search: { post: data.id } });
   }
 
+  const subtitleFn = useServerFn(subtitleReel);
+  const [subtitling, setSubtitling] = useState<string | null>(null);
+
+  async function generateSubtitles(reel: Reel) {
+    if (!userId || subtitling) return;
+    setError(null);
+    setSubtitling(reel.id);
+    try {
+      const r = await subtitleFn({ data: { reelId: reel.id } });
+      setReels((prev) =>
+        prev.map((x) =>
+          x.id === reel.id
+            ? {
+                ...x,
+                status: "sous_titre",
+                subtitled_video_url: r.subtitledUrl ?? x.subtitled_video_url,
+              }
+            : x,
+        ),
+      );
+      setTransformFlash(
+        r.subtitledUrl
+          ? `Sous-titrage prêt pour « ${reel.title || "ce réel"} ».`
+          : `Sous-titrage lancé pour « ${reel.title || "ce réel"} ».`,
+      );
+      setTimeout(() => setTransformFlash(null), 4000);
+    } catch (e: any) {
+      setError(e?.message ?? "Sous-titrage impossible.");
+    } finally {
+      setSubtitling(null);
+    }
+  }
+
 
   const filtered = reels.filter((r) => {
     if (fPillar !== "all" && r.pillar_id !== fPillar) return false;
@@ -347,6 +383,8 @@ function ReelsPage() {
               onDelete={() => removeReel(r)}
               onTransformIdea={() => transformToIdea(r)}
               onTransformPost={() => transformToPost(r)}
+              onSubtitle={() => generateSubtitles(r)}
+              subtitling={subtitling === r.id}
             />
           ))}
         </div>
@@ -413,6 +451,8 @@ function ReelCard({
   onDelete,
   onTransformIdea,
   onTransformPost,
+  onSubtitle,
+  subtitling,
 }: {
   reel: Reel;
   url?: string;
@@ -422,9 +462,12 @@ function ReelCard({
   onDelete: () => void;
   onTransformIdea: () => void;
   onTransformPost: () => void;
+  onSubtitle: () => void;
+  subtitling: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const hasTranscription = !!reel.transcription?.trim();
+  const hasSubtitled = !!reel.subtitled_video_url;
   return (
     <article className="bg-card rounded-2xl shadow-[var(--shadow-soft)] overflow-hidden group">
       <button
@@ -476,6 +519,16 @@ function ReelCard({
           <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-foreground/80">
             {statusLabel(reel.status)}
           </span>
+          {hasSubtitled && (
+            <a
+              href={reel.subtitled_video_url ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary inline-flex items-center gap-1"
+            >
+              <Captions className="h-3 w-3" /> Vidéo sous-titrée
+            </a>
+          )}
         </div>
         <div className="flex justify-end items-center gap-1 pt-1 relative">
           {hasTranscription && (
@@ -528,6 +581,21 @@ function ReelCard({
                 </>
               )}
             </div>
+          )}
+          {hasTranscription && (
+            <button
+              onClick={onSubtitle}
+              disabled={subtitling}
+              aria-label="Générer les sous-titres"
+              title="Générer les sous-titres"
+              className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted text-foreground/70 disabled:opacity-40"
+            >
+              {subtitling ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Captions className="h-4 w-4" />
+              )}
+            </button>
           )}
           <button
             onClick={onEdit}

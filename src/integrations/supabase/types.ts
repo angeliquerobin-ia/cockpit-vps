@@ -261,6 +261,7 @@ export type Database = {
           original_video_path: string | null
           pillar_id: string | null
           status: Database["public"]["Enums"]["reel_status"]
+          subtitled_video_url: string | null
           subtitles: string
           title: string
           transcription: string
@@ -275,6 +276,7 @@ export type Database = {
           original_video_path?: string | null
           pillar_id?: string | null
           status?: Database["public"]["Enums"]["reel_status"]
+          subtitled_video_url?: string | null
           subtitles?: string
           title?: string
           transcription?: string
@@ -289,6 +291,7 @@ export type Database = {
           original_video_path?: string | null
           pillar_id?: string | null
           status?: Database["public"]["Enums"]["reel_status"]
+          subtitled_video_url?: string | null
           subtitles?: string
           title?: string
           transcription?: string

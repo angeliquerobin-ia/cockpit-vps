@@ -13,6 +13,7 @@ const InputSchema = z.object({
     "more_embodied",
     "add_cta",
     "hashtags",
+    "spellcheck",
   ]),
   channel: z.string().nullable().optional(),
   pillarId: z.string().nullable().optional(),
@@ -51,6 +52,8 @@ const ACTION_INSTRUCTIONS: Record<string, string> = {
     "Ajoute (ou remplace) un appel à l'action clair, doux et adapté à la fin du post fourni. Renvoie le post complet.",
   hashtags:
     "Propose une sélection de 10 à 15 hashtags pertinents, en français, mélangeant volumes large et niche. Renvoie uniquement la liste, séparée par des espaces.",
+  spellcheck:
+    "Corrige UNIQUEMENT les fautes d'orthographe, de grammaire, de conjugaison, d'accord et de ponctuation dans le texte fourni. Tu dois absolument GARDER les phrases telles qu'elles sont : ne reformule rien, ne change pas le ton, ne déplace pas les mots, ne remplace pas de vocabulaire, ne raccourcis ni n'allonges aucune phrase. Conserve à l'identique la mise en forme, les sauts de ligne, les emojis, les hashtags et la ponctuation stylistique voulue. Renvoie uniquement le texte corrigé, sans commentaire, sans préambule, sans guillemets.",
 };
 
 export const aiWrite = createServerFn({ method: "POST" })
@@ -124,6 +127,20 @@ export const aiWrite = createServerFn({ method: "POST" })
 
     const openrouter = createOpenRouterProvider(apiKey);
     const model = openrouter("openai/gpt-5");
+
+    // Mode "spellcheck" : on court-circuite tout le contexte canal/pilier/stratégie
+    // pour ne pas tenter de reformuler. On corrige uniquement la matière fournie.
+    if (data.mode === "spellcheck") {
+      const source = data.currentContent?.trim();
+      if (!source) return { text: "" };
+      const result = await generateText({
+        model,
+        system:
+          "Tu es un correcteur orthographique et grammatical en français. Tu ne reformules JAMAIS. Tu ne changes JAMAIS la tournure ni le vocabulaire. Tu corriges uniquement les fautes (orthographe, grammaire, conjugaison, accords, ponctuation manifestement fautive). Tu renvoies uniquement le texte corrigé, à l'identique pour tout le reste (mise en forme, sauts de ligne, emojis, hashtags).",
+        prompt: `${action}\n\n---\n\nTexte à corriger :\n\n${source}`,
+      });
+      return { text: result.text.trim() };
+    }
 
     const result = await generateText({
       model,
