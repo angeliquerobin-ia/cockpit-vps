@@ -221,3 +221,112 @@ export const aiSuggestIdeas = createServerFn({ method: "POST" })
 
     return { ideas };
   });
+
+// ----- Décliner un post sur un autre canal -----
+
+const DeriveSchema = z.object({
+  sourcePostId: z.string().min(1),
+  targetChannel: z.string().min(1),
+});
+
+export const aiDeriveForChannel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => DeriveSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
+    const { supabase, userId } = context;
+
+    const { data: source, error: srcErr } = await supabase
+      .from("posts")
+      .select("id,title,content,channel,pillar_id,idea_id")
+      .eq("id", data.sourcePostId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (srcErr) throw new Error(srcErr.message);
+    if (!source) throw new Error("Post d'origine introuvable.");
+
+    const sourceChannelLabel = source.channel
+      ? CHANNEL_LABELS[source.channel] ?? source.channel
+      : "—";
+    const targetChannelLabel =
+      CHANNEL_LABELS[data.targetChannel] ?? data.targetChannel;
+
+    const [stratRes, pillarRes, promptRes] = await Promise.all([
+      supabase
+        .from("strategy_documents")
+        .select("content")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      source.pillar_id
+        ? supabase
+            .from("content_pillars")
+            .select("name,description")
+            .eq("id", source.pillar_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabase
+        .from("channel_prompts")
+        .select("prompt")
+        .eq("user_id", userId)
+        .eq("channel", data.targetChannel as any)
+        .maybeSingle(),
+    ]);
+
+    const channelPrompt =
+      (promptRes.data as any)?.prompt?.trim() ||
+      DEFAULT_CHANNEL_PROMPTS[data.targetChannel] ||
+      "Adopte un ton juste, incarné, élevant.";
+    const strategyText = plainText((stratRes.data as any)?.content).trim();
+    const pillar = pillarRes.data as
+      | { name: string; description: string | null }
+      | null;
+
+    const contextBlock = [
+      `# Canal cible : ${targetChannelLabel}`,
+      ``,
+      `## Consigne de rédaction du canal cible`,
+      channelPrompt,
+      ``,
+      strategyText
+        ? `## Ligne éditoriale & stratégie de l'autrice\n${strategyText}`
+        : "",
+      pillar
+        ? `## Pilier de contenu\n**${pillar.name}**\n${pillar.description ?? ""}`
+        : "",
+      `## Post d'origine (canal : ${sourceChannelLabel})\n${(source.content ?? "").trim() || "(post vide)"}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    const openrouter = createOpenRouterProvider(apiKey);
+    const { text } = await generateText({
+      model: openrouter("openai/gpt-5"),
+      system:
+        "Tu es l'agent de rédaction d'une coach. Tu écris en français. Tu adaptes un post à un autre canal en respectant strictement la consigne du canal cible (longueur, ton, format, structure). Ne traduis pas mot à mot : repense l'angle, l'accroche, le rythme et la chute pour qu'ils soient natifs au canal cible. Ne commente jamais ton travail, renvoie uniquement le texte du nouveau post (sans titre, sans guillemets, sans préambule).",
+      prompt: `${contextBlock}\n\n---\n\n## Tâche\nDécline ce post pour le canal cible. Garde l'intention et le pilier. Adapte le format, la longueur, le ton et la structure aux usages du canal cible et à sa consigne de rédaction.`,
+    });
+
+    const newContent = text.trim();
+    const newTitle = source.title
+      ? `${source.title} — ${targetChannelLabel}`
+      : `Décliné pour ${targetChannelLabel}`;
+
+    const { data: inserted, error: insErr } = await supabase
+      .from("posts")
+      .insert({
+        user_id: userId,
+        title: newTitle.slice(0, 200),
+        content: newContent,
+        channel: data.targetChannel as any,
+        pillar_id: source.pillar_id,
+        idea_id: source.idea_id,
+        source_post_id: source.id,
+        status: "en_redaction",
+      } as any)
+      .select("id")
+      .single();
+    if (insErr) throw new Error(insErr.message);
+
+    return { postId: (inserted as any).id };
+  });
