@@ -1,0 +1,1 @@
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS webhook_competitors_content text NOT NULL DEFAULT '';

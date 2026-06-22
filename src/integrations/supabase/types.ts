@@ -346,6 +346,7 @@ export type Database = {
           updated_at: string
           user_id: string
           webhook_competitors: string
+          webhook_competitors_content: string
           webhook_publish: string
           webhook_stats: string
           webhook_subtitles: string
@@ -358,6 +359,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           webhook_competitors?: string
+          webhook_competitors_content?: string
           webhook_publish?: string
           webhook_stats?: string
           webhook_subtitles?: string
@@ -370,6 +372,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           webhook_competitors?: string
+          webhook_competitors_content?: string
           webhook_publish?: string
           webhook_stats?: string
           webhook_subtitles?: string

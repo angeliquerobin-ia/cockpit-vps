@@ -31,6 +31,7 @@ type Settings = {
   webhook_publish: string;
   webhook_stats: string;
   webhook_competitors: string;
+  webhook_competitors_content: string;
   webhook_transcription: string;
   webhook_subtitles: string;
 };
@@ -41,6 +42,7 @@ const DEFAULT_SETTINGS: Settings = {
   webhook_publish: "",
   webhook_stats: "",
   webhook_competitors: "",
+  webhook_competitors_content: "",
   webhook_transcription: "",
   webhook_subtitles: "",
 };
@@ -94,6 +96,12 @@ const WEBHOOKS: {
     key: "webhook_competitors",
     label: "Données concurrents",
     helper: "Met à jour la veille concurrentielle.",
+  },
+  {
+    key: "webhook_competitors_content",
+    label: "Analyse contenu concurrents",
+    helper:
+      "Récupère via Firecrawl les publications récentes des concurrents pour l'analyse IA.",
   },
   {
     key: "webhook_transcription",
@@ -154,6 +162,7 @@ function ReglagesPage() {
           webhook_publish: s.webhook_publish ?? "",
           webhook_stats: s.webhook_stats ?? "",
           webhook_competitors: s.webhook_competitors ?? "",
+          webhook_competitors_content: s.webhook_competitors_content ?? "",
           webhook_transcription: s.webhook_transcription ?? "",
           webhook_subtitles: s.webhook_subtitles ?? "",
         });

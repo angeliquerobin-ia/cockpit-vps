@@ -1,8 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { refreshCompetitors } from "@/lib/competitors.functions";
+import {
+  refreshCompetitors,
+  analyzeCompetitorsMetrics,
+  analyzeCompetitorsContent,
+  createIdeaFromSuggestion,
+} from "@/lib/competitors.functions";
 import { CHANNEL_LABELS } from "@/lib/channel-prompts";
 import {
   Plus,
@@ -14,6 +19,10 @@ import {
   ArrowUp,
   ArrowDown,
   Minus,
+  Sparkles,
+  BookOpen,
+  Lightbulb,
+  Loader2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/concurrents")({
@@ -56,6 +65,10 @@ function timeAgo(iso?: string | null) {
 
 function CompetitorsPage() {
   const refresh = useServerFn(refreshCompetitors);
+  const analyzeMetrics = useServerFn(analyzeCompetitorsMetrics);
+  const analyzeContent = useServerFn(analyzeCompetitorsContent);
+  const addIdea = useServerFn(createIdeaFromSuggestion);
+  const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [activeChannels, setActiveChannels] = useState<string[]>([]);
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
@@ -68,6 +81,70 @@ function CompetitorsPage() {
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+
+  // Analyse IA — chiffres
+  const [metricsAnalysis, setMetricsAnalysis] = useState<string | null>(null);
+  const [analyzingMetrics, setAnalyzingMetrics] = useState(false);
+  const [metricsError, setMetricsError] = useState<string | null>(null);
+
+  // Analyse IA — contenu
+  const [contentSelection, setContentSelection] = useState<Set<string>>(
+    new Set(),
+  );
+  const [contentAnalysis, setContentAnalysis] = useState<string | null>(null);
+  const [analyzingContent, setAnalyzingContent] = useState(false);
+  const [contentError, setContentError] = useState<string | null>(null);
+  const [addedIdeas, setAddedIdeas] = useState<Set<string>>(new Set());
+
+  async function handleAnalyzeMetrics() {
+    setAnalyzingMetrics(true);
+    setMetricsError(null);
+    try {
+      const r = await analyzeMetrics();
+      setMetricsAnalysis(r.analysis);
+    } catch (e: any) {
+      setMetricsError(e?.message ?? "Erreur inconnue");
+    } finally {
+      setAnalyzingMetrics(false);
+    }
+  }
+
+  async function handleAnalyzeContent() {
+    if (contentSelection.size === 0) return;
+    setAnalyzingContent(true);
+    setContentError(null);
+    try {
+      const r = await analyzeContent({
+        data: { competitorIds: Array.from(contentSelection) },
+      });
+      setContentAnalysis(r.analysis);
+    } catch (e: any) {
+      setContentError(e?.message ?? "Erreur inconnue");
+    } finally {
+      setAnalyzingContent(false);
+    }
+  }
+
+  function toggleSelection(id: string) {
+    setContentSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleAddIdea(title: string, note: string) {
+    const key = `${title}::${note}`;
+    if (addedIdeas.has(key)) return;
+    try {
+      await addIdea({ data: { title, note } });
+      setAddedIdeas((s) => new Set(s).add(key));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -296,9 +373,281 @@ function CompetitorsPage() {
           ))
         )}
       </section>
+
+      {/* Analyse IA — chiffres */}
+      <section className="space-y-4">
+        <div className="flex items-baseline justify-between gap-3 flex-wrap">
+          <h2 className="text-2xl">Analyse intelligente</h2>
+          <button
+            onClick={handleAnalyzeMetrics}
+            disabled={analyzingMetrics || (!lastFetched && competitors.length === 0)}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {analyzingMetrics ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {analyzingMetrics ? "Analyse en cours…" : "Analyser"}
+          </button>
+        </div>
+        {metricsError && (
+          <p className="text-sm text-destructive">{metricsError}</p>
+        )}
+        {metricsAnalysis ? (
+          <article className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-6">
+            <MarkdownLite text={metricsAnalysis} />
+          </article>
+        ) : (
+          <div className="bg-card rounded-2xl p-8 shadow-[var(--shadow-soft)] text-center">
+            <p className="text-sm opacity-70">
+              <em>
+                Lance une analyse pour voir où tu te situes, qui te devance et
+                sur quels indicateurs.
+              </em>
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* Analyse IA — contenu */}
+      <section className="space-y-4">
+        <div className="flex items-baseline justify-between gap-3 flex-wrap">
+          <h2 className="text-2xl">Analyser leur contenu</h2>
+          <button
+            onClick={handleAnalyzeContent}
+            disabled={analyzingContent || contentSelection.size === 0}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {analyzingContent ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <BookOpen className="h-4 w-4" />
+            )}
+            {analyzingContent
+              ? "Lecture des publications…"
+              : `Analyser le contenu${contentSelection.size ? ` (${contentSelection.size})` : ""}`}
+          </button>
+        </div>
+
+        {competitors.length === 0 ? (
+          <div className="bg-card rounded-2xl p-8 shadow-[var(--shadow-soft)] text-center">
+            <p className="text-sm opacity-70">
+              Ajoute des concurrents pour analyser leur contenu.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-5 space-y-3">
+            <p className="text-xs uppercase tracking-[0.15em] opacity-60">
+              Sélectionne les comptes à explorer
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {competitors.map((c) => {
+                const on = contentSelection.has(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => toggleSelection(c.id)}
+                    className={`text-sm px-3 py-1.5 rounded-full border transition-all ${
+                      on
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border hover:bg-muted"
+                    }`}
+                  >
+                    {c.name}
+                    <span className="opacity-50 ml-1.5 text-xs">
+                      {CHANNEL_LABELS[c.channel] ?? c.channel}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {contentError && (
+          <p className="text-sm text-destructive">{contentError}</p>
+        )}
+
+        {contentAnalysis && (
+          <article className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-6 space-y-4">
+            <MarkdownLite text={contentAnalysis} />
+            <SuggestionsBlock
+              text={contentAnalysis}
+              addedIdeas={addedIdeas}
+              onAdd={handleAddIdea}
+              onGoToIdeas={() => navigate({ to: "/idees" })}
+            />
+          </article>
+        )}
+      </section>
     </div>
   );
 }
+
+function MarkdownLite({ text }: { text: string }) {
+  // Lightweight renderer for ##, **, and lists. Keep terre/Cormorant identity.
+  const lines = text.split("\n");
+  const out: any[] = [];
+  let list: string[] = [];
+  const flushList = () => {
+    if (list.length === 0) return;
+    out.push(
+      <ul key={`ul-${out.length}`} className="list-disc pl-5 space-y-1 my-2">
+        {list.map((l, i) => (
+          <li key={i} className="opacity-85 leading-relaxed">
+            {inline(l)}
+          </li>
+        ))}
+      </ul>,
+    );
+    list = [];
+  };
+  function inline(s: string) {
+    const parts = s.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((p, i) =>
+      p.startsWith("**") && p.endsWith("**") ? (
+        <strong key={i} className="text-primary font-medium">
+          {p.slice(2, -2)}
+        </strong>
+      ) : (
+        <span key={i}>{p}</span>
+      ),
+    );
+  }
+  lines.forEach((raw, idx) => {
+    const l = raw.trimEnd();
+    if (/^- PISTE:/i.test(l.trim())) return; // handled separately
+    if (l.startsWith("## ")) {
+      flushList();
+      out.push(
+        <h3
+          key={idx}
+          className="text-xl mt-5 first:mt-0"
+          style={{ fontFamily: "'Cormorant Garamond', serif" }}
+        >
+          {l.slice(3)}
+        </h3>,
+      );
+    } else if (l.startsWith("# ")) {
+      flushList();
+      out.push(
+        <h2
+          key={idx}
+          className="text-2xl mt-5 first:mt-0"
+          style={{ fontFamily: "'Cormorant Garamond', serif" }}
+        >
+          {l.slice(2)}
+        </h2>,
+      );
+    } else if (/^\s*[-*]\s+/.test(l)) {
+      list.push(l.replace(/^\s*[-*]\s+/, ""));
+    } else if (l.trim() === "") {
+      flushList();
+    } else {
+      flushList();
+      out.push(
+        <p key={idx} className="opacity-85 leading-relaxed my-2">
+          {inline(l)}
+        </p>,
+      );
+    }
+  });
+  flushList();
+  return <div className="space-y-1">{out}</div>;
+}
+
+function SuggestionsBlock({
+  text,
+  addedIdeas,
+  onAdd,
+  onGoToIdeas,
+}: {
+  text: string;
+  addedIdeas: Set<string>;
+  onAdd: (title: string, note: string) => void;
+  onGoToIdeas: () => void;
+}) {
+  const suggestions = useMemo(() => {
+    const out: { title: string; note: string }[] = [];
+    for (const raw of text.split("\n")) {
+      const m = raw.trim().match(/^-\s*PISTE\s*:\s*(.+)$/i);
+      if (!m) continue;
+      const body = m[1].trim();
+      const sep = body.match(/\s[—–-]\s/);
+      if (sep) {
+        const i = body.indexOf(sep[0]);
+        out.push({
+          title: body.slice(0, i).trim(),
+          note: body.slice(i + sep[0].length).trim(),
+        });
+      } else {
+        out.push({ title: body, note: "" });
+      }
+    }
+    return out;
+  }, [text]);
+
+  if (suggestions.length === 0) return null;
+
+  return (
+    <div className="pt-2 border-t border-border/40 space-y-3">
+      <div className="flex items-center justify-between">
+        <h4
+          className="text-lg"
+          style={{ fontFamily: "'Cormorant Garamond', serif" }}
+        >
+          Pistes à transformer en idée
+        </h4>
+        <button
+          onClick={onGoToIdeas}
+          className="text-xs text-primary hover:underline"
+        >
+          Voir mes idées →
+        </button>
+      </div>
+      <ul className="space-y-2">
+        {suggestions.map((s, i) => {
+          const key = `${s.title}::${s.note}`;
+          const added = addedIdeas.has(key);
+          return (
+            <li
+              key={i}
+              className="flex items-start gap-3 rounded-xl bg-popover/60 p-3"
+            >
+              <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm leading-snug">
+                  <strong className="text-primary font-medium">
+                    {s.title}
+                  </strong>
+                  {s.note && (
+                    <span className="opacity-75"> — {s.note}</span>
+                  )}
+                </p>
+              </div>
+              <button
+                onClick={() => onAdd(s.title, s.note)}
+                disabled={added}
+                className="text-xs rounded-md border border-border px-2.5 py-1 hover:bg-muted disabled:opacity-50 transition-colors shrink-0"
+              >
+                {added ? (
+                  <span className="inline-flex items-center gap-1 text-primary">
+                    <Check className="h-3 w-3" />
+                    Ajoutée
+                  </span>
+                ) : (
+                  "Ajouter à mes idées"
+                )}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 
 function CompetitorCard({
   competitor,
