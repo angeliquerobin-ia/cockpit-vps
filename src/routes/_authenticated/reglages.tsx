@@ -513,11 +513,86 @@ function ReglagesPage() {
                     <Save className="h-3.5 w-3.5" />
                   </button>
                 </div>
+                {w.key === "webhook_stats" && <StatsWebhookHelp />}
               </div>
             );
           })}
         </div>
       </Section>
+    </div>
+  );
+}
+
+function StatsWebhookHelp() {
+  const [open, setOpen] = useState(false);
+  const exampleOut = `{
+  "instagram": {
+    "followers": 4820,
+    "engagement_rate": 3.2,
+    "reach": 18500,
+    "top_posts": [
+      { "title": "Routine du matin", "engagement": 412, "date": "2026-06-14" }
+    ]
+  },
+  "linkedin": {
+    "followers": 1240,
+    "engagement_rate": 5.1,
+    "reach": 6200,
+    "top_posts": []
+  }
+}`;
+  const exampleIn = `{
+  "user_id": "uuid de l'utilisateur",
+  "channels": ["instagram", "linkedin", "tiktok"]
+}`;
+  return (
+    <div className="mt-2 rounded-xl border border-border/60 bg-background/40 p-4 text-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="font-serif text-base text-primary hover:opacity-80 transition-opacity"
+        style={{ fontFamily: "'Cormorant Garamond', serif" }}
+      >
+        {open ? "▾" : "▸"} Comment brancher Metricool via N8N
+      </button>
+      {open && (
+        <div className="mt-3 space-y-3 leading-relaxed opacity-90">
+          <p>
+            L'app n'appelle <em>pas</em> Metricool directement : elle envoie une
+            requête à ton workflow N8N, qui interroge l'API Metricool (avec ton
+            token), puis renvoie les chiffres au format attendu.
+          </p>
+          <div>
+            <p className="font-medium mb-1">1. Payload envoyé par l'app (POST JSON) :</p>
+            <pre className="rounded-lg bg-card/80 border border-border/50 p-3 text-xs font-mono overflow-x-auto">
+{exampleIn}
+            </pre>
+          </div>
+          <div>
+            <p className="font-medium mb-1">2. Dans N8N :</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Nœud <em>Webhook</em> (méthode POST) → colle son URL ci-dessus.</li>
+              <li>Pour chaque canal de <code>channels</code>, appelle l'API Metricool correspondante (compte connecté, métriques, top posts).</li>
+              <li>Nœud <em>Respond to Webhook</em> qui renvoie le JSON ci-dessous.</li>
+            </ul>
+          </div>
+          <div>
+            <p className="font-medium mb-1">3. Format JSON attendu en retour :</p>
+            <pre className="rounded-lg bg-card/80 border border-border/50 p-3 text-xs font-mono overflow-x-auto">
+{exampleOut}
+            </pre>
+            <p className="text-xs opacity-70 mt-1">
+              Une clé par canal (les mêmes identifiants que tes canaux actifs).
+              <code>top_posts</code> est facultatif mais nourrit la section
+              « Mes meilleurs posts » de l'analyse IA.
+            </p>
+          </div>
+          <p className="text-xs opacity-70">
+            Une fois branché, va dans <em>Statistiques</em> → <em>Rafraîchir</em>{" "}
+            pour stocker un premier snapshot, puis <em>Analyser mes performances</em>.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
