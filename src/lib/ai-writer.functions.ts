@@ -128,6 +128,20 @@ export const aiWrite = createServerFn({ method: "POST" })
     const openrouter = createOpenRouterProvider(apiKey);
     const model = openrouter("openai/gpt-5");
 
+    // Mode "spellcheck" : on court-circuite tout le contexte canal/pilier/stratégie
+    // pour ne pas tenter de reformuler. On corrige uniquement la matière fournie.
+    if (data.mode === "spellcheck") {
+      const source = data.currentContent?.trim();
+      if (!source) return { text: "" };
+      const result = await generateText({
+        model,
+        system:
+          "Tu es un correcteur orthographique et grammatical en français. Tu ne reformules JAMAIS. Tu ne changes JAMAIS la tournure ni le vocabulaire. Tu corriges uniquement les fautes (orthographe, grammaire, conjugaison, accords, ponctuation manifestement fautive). Tu renvoies uniquement le texte corrigé, à l'identique pour tout le reste (mise en forme, sauts de ligne, emojis, hashtags).",
+        prompt: `${action}\n\n---\n\nTexte à corriger :\n\n${source}`,
+      });
+      return { text: result.text.trim() };
+    }
+
     const result = await generateText({
       model,
       system:
