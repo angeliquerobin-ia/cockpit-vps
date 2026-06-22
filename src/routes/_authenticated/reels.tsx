@@ -481,18 +481,50 @@ function PlayerModal({
 function EditModal({
   reel,
   pillars,
+  url,
   onClose,
   onSave,
+  onConverted,
 }: {
   reel: Reel;
   pillars: Pillar[];
+  url?: string;
   onClose: () => void;
   onSave: (patch: Partial<Reel>) => void;
+  onConverted: () => Promise<void> | void;
 }) {
   const [title, setTitle] = useState(reel.title);
   const [pillarId, setPillarId] = useState(reel.pillar_id ?? "");
   const [channel, setChannel] = useState(reel.channel ?? "");
   const [status, setStatus] = useState<ReelStatus>(reel.status);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
+  const [gravityX, setGravityX] = useState(0.5);
+  const [converting, setConverting] = useState(false);
+  const [convertError, setConvertError] = useState<string | null>(null);
+  const convertFn = useServerFn(convertReelToVertical);
+
+  const isHorizontal = dims ? dims.w / dims.h > 9 / 16 + 0.001 : false;
+  const cropFractionW = dims ? (dims.h * (9 / 16)) / dims.w : 1;
+  // position du cadre 9:16 dans la preview, en % de la largeur affichée
+  const overlayLeftPct = isHorizontal
+    ? (1 - cropFractionW) * gravityX * 100
+    : 0;
+  const overlayWidthPct = cropFractionW * 100;
+
+  async function handleConvert() {
+    setConverting(true);
+    setConvertError(null);
+    try {
+      await convertFn({ data: { reelId: reel.id, gravityX } });
+      await onConverted();
+    } catch (e: any) {
+      setConvertError(e?.message ?? "Conversion impossible.");
+    } finally {
+      setConverting(false);
+    }
+  }
 
   return (
     <div
