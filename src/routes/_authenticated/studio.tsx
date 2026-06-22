@@ -473,22 +473,16 @@ function PostEditor({
           </div>
         </div>
 
-        {/* Assistant panel (placeholder) */}
-        <aside className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-5 space-y-4 h-fit lg:sticky lg:top-6">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <h2 className="text-xl">Assistant</h2>
-          </div>
-          <p className="text-xs uppercase tracking-[0.15em] opacity-60">Bientôt</p>
-          <div className="rounded-xl border border-dashed border-border p-6 text-center">
-            <p className="text-sm opacity-70 leading-relaxed">
-              <em>
-                Votre agent de rédaction arrivera ici à la prochaine étape pour vous
-                aider à reformuler, condenser et trouver le ton juste.
-              </em>
-            </p>
-          </div>
-        </aside>
+        <AssistantPanel
+          channel={(channel || null) as Channel | null}
+          pillarId={pillarId || null}
+          currentContent={content}
+          onInsert={(text) =>
+            setContent((prev) =>
+              prev.trim() ? prev.trimEnd() + "\n\n" + text : text,
+            )
+          }
+        />
       </div>
     </div>
   );
@@ -507,4 +501,145 @@ function toLocalInput(iso: string) {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+const QUICK_ACTIONS: { mode: AiMode; label: string }[] = [
+  { mode: "shorten", label: "Raccourcir" },
+  { mode: "rewrite_hook", label: "Réécrire l'accroche" },
+  { mode: "more_embodied", label: "Plus incarné" },
+  { mode: "add_cta", label: "Ajouter un appel à l'action" },
+  { mode: "hashtags", label: "Proposer des hashtags" },
+];
+
+type AiMode =
+  | "generate"
+  | "shorten"
+  | "rewrite_hook"
+  | "more_embodied"
+  | "add_cta"
+  | "hashtags";
+
+function AssistantPanel({
+  channel,
+  pillarId,
+  currentContent,
+  onInsert,
+}: {
+  channel: Channel | null;
+  pillarId: string | null;
+  currentContent: string;
+  onInsert: (text: string) => void;
+}) {
+  const [subject, setSubject] = useState("");
+  const [generated, setGenerated] = useState("");
+  const [busy, setBusy] = useState<AiMode | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run(mode: AiMode) {
+    setBusy(mode);
+    setError(null);
+    try {
+      const { aiWrite } = await import("@/lib/ai-writer.functions");
+      const result = await aiWrite({
+        data: {
+          mode,
+          channel,
+          pillarId,
+          subject,
+          currentContent: generated.trim() || currentContent,
+        },
+      });
+      setGenerated(result.text);
+    } catch (e: any) {
+      setError(e?.message ?? "Génération impossible.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const channelReady = !!channel;
+
+  return (
+    <aside className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-5 space-y-4 h-fit lg:sticky lg:top-6">
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-4 w-4 text-primary" />
+        <h2 className="text-xl">Assistant</h2>
+      </div>
+      <p className="text-xs uppercase tracking-[0.15em] opacity-60">
+        Agent de rédaction
+      </p>
+
+      {!channelReady && (
+        <p className="text-xs opacity-70 rounded-lg bg-muted/50 px-3 py-2">
+          <em>Choisissez un canal pour activer l'agent.</em>
+        </p>
+      )}
+
+      <div className="space-y-2">
+        <label className="text-xs uppercase tracking-[0.15em] opacity-70">
+          Sujet ou angle
+        </label>
+        <textarea
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          rows={3}
+          placeholder="Ex. l'imposture qui revient quand on lance une nouvelle offre…"
+          className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+        />
+        <button
+          onClick={() => run("generate")}
+          disabled={!channelReady || busy !== null}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm hover:opacity-90 transition-opacity disabled:opacity-40"
+        >
+          <Sparkles className="h-4 w-4" />
+          {busy === "generate" ? "Génération…" : "Générer"}
+        </button>
+      </div>
+
+      {(generated || busy) && (
+        <div className="space-y-2">
+          <label className="text-xs uppercase tracking-[0.15em] opacity-70">
+            Texte généré
+          </label>
+          <textarea
+            value={generated}
+            onChange={(e) => setGenerated(e.target.value)}
+            rows={12}
+            placeholder={busy ? "L'agent rédige…" : ""}
+            className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {QUICK_ACTIONS.map((a) => (
+              <button
+                key={a.mode}
+                onClick={() => run(a.mode)}
+                disabled={!channelReady || busy !== null || !generated.trim()}
+                className="text-xs rounded-full bg-muted hover:bg-muted/70 px-2.5 py-1 transition-colors disabled:opacity-40"
+              >
+                {busy === a.mode ? "…" : a.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => {
+              if (generated.trim()) {
+                onInsert(generated.trim());
+                setGenerated("");
+              }
+            }}
+            disabled={!generated.trim()}
+            className="w-full rounded-lg border border-primary/40 text-primary px-3 py-2 text-sm hover:bg-primary/10 transition-colors disabled:opacity-40"
+          >
+            Insérer dans le post
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <p className="text-xs text-destructive rounded-lg bg-destructive/10 px-3 py-2">
+          {error}
+        </p>
+      )}
+    </aside>
+  );
 }

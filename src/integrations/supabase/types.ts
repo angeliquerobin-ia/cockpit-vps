@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      channel_prompts: {
+        Row: {
+          channel: Database["public"]["Enums"]["pillar_channel"]
+          created_at: string
+          id: string
+          prompt: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["pillar_channel"]
+          created_at?: string
+          id?: string
+          prompt?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["pillar_channel"]
+          created_at?: string
+          id?: string
+          prompt?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_pillars: {
         Row: {
           channel: Database["public"]["Enums"]["pillar_channel"]
