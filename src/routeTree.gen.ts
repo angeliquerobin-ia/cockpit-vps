@@ -18,6 +18,7 @@ import { Route as AuthenticatedStatistiquesRouteImport } from './routes/_authent
 import { Route as AuthenticatedReglagesRouteImport } from './routes/_authenticated/reglages'
 import { Route as AuthenticatedReelsRouteImport } from './routes/_authenticated/reels'
 import { Route as AuthenticatedIdeesRouteImport } from './routes/_authenticated/idees'
+import { Route as AuthenticatedCorbeilleRouteImport } from './routes/_authenticated/corbeille'
 import { Route as AuthenticatedConcurrentsRouteImport } from './routes/_authenticated/concurrents'
 import { Route as AuthenticatedCalendrierRouteImport } from './routes/_authenticated/calendrier'
 
@@ -66,6 +67,11 @@ const AuthenticatedIdeesRoute = AuthenticatedIdeesRouteImport.update({
   path: '/idees',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCorbeilleRoute = AuthenticatedCorbeilleRouteImport.update({
+  id: '/corbeille',
+  path: '/corbeille',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedConcurrentsRoute =
   AuthenticatedConcurrentsRouteImport.update({
     id: '/concurrents',
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/calendrier': typeof AuthenticatedCalendrierRoute
   '/concurrents': typeof AuthenticatedConcurrentsRoute
+  '/corbeille': typeof AuthenticatedCorbeilleRoute
   '/idees': typeof AuthenticatedIdeesRoute
   '/reels': typeof AuthenticatedReelsRoute
   '/reglages': typeof AuthenticatedReglagesRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/calendrier': typeof AuthenticatedCalendrierRoute
   '/concurrents': typeof AuthenticatedConcurrentsRoute
+  '/corbeille': typeof AuthenticatedCorbeilleRoute
   '/idees': typeof AuthenticatedIdeesRoute
   '/reels': typeof AuthenticatedReelsRoute
   '/reglages': typeof AuthenticatedReglagesRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/calendrier': typeof AuthenticatedCalendrierRoute
   '/_authenticated/concurrents': typeof AuthenticatedConcurrentsRoute
+  '/_authenticated/corbeille': typeof AuthenticatedCorbeilleRoute
   '/_authenticated/idees': typeof AuthenticatedIdeesRoute
   '/_authenticated/reels': typeof AuthenticatedReelsRoute
   '/_authenticated/reglages': typeof AuthenticatedReglagesRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/calendrier'
     | '/concurrents'
+    | '/corbeille'
     | '/idees'
     | '/reels'
     | '/reglages'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/calendrier'
     | '/concurrents'
+    | '/corbeille'
     | '/idees'
     | '/reels'
     | '/reglages'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/calendrier'
     | '/_authenticated/concurrents'
+    | '/_authenticated/corbeille'
     | '/_authenticated/idees'
     | '/_authenticated/reels'
     | '/_authenticated/reglages'
@@ -227,6 +239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIdeesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/corbeille': {
+      id: '/_authenticated/corbeille'
+      path: '/corbeille'
+      fullPath: '/corbeille'
+      preLoaderRoute: typeof AuthenticatedCorbeilleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/concurrents': {
       id: '/_authenticated/concurrents'
       path: '/concurrents'
@@ -247,6 +266,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendrierRoute: typeof AuthenticatedCalendrierRoute
   AuthenticatedConcurrentsRoute: typeof AuthenticatedConcurrentsRoute
+  AuthenticatedCorbeilleRoute: typeof AuthenticatedCorbeilleRoute
   AuthenticatedIdeesRoute: typeof AuthenticatedIdeesRoute
   AuthenticatedReelsRoute: typeof AuthenticatedReelsRoute
   AuthenticatedReglagesRoute: typeof AuthenticatedReglagesRoute
@@ -258,6 +278,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendrierRoute: AuthenticatedCalendrierRoute,
   AuthenticatedConcurrentsRoute: AuthenticatedConcurrentsRoute,
+  AuthenticatedCorbeilleRoute: AuthenticatedCorbeilleRoute,
   AuthenticatedIdeesRoute: AuthenticatedIdeesRoute,
   AuthenticatedReelsRoute: AuthenticatedReelsRoute,
   AuthenticatedReglagesRoute: AuthenticatedReglagesRoute,
