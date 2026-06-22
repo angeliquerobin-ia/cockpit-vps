@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -57,6 +57,7 @@ const statusLabel = (s: Status) =>
   STATUSES.find((x) => x.value === s)?.label ?? s;
 
 function IdeasPage() {
+  const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -117,6 +118,24 @@ function IdeasPage() {
     if (!confirm("Supprimer cette idée ?")) return;
     setIdeas((prev) => prev.filter((i) => i.id !== id));
     await supabase.from("ideas").delete().eq("id", id);
+  }
+
+  async function transformToPost(idea: Idea) {
+    if (!userId) return;
+    const { data } = await supabase
+      .from("posts")
+      .insert({
+        user_id: userId,
+        title: idea.title,
+        content: idea.note ?? "",
+        pillar_id: idea.pillar_id,
+        channel: idea.channel,
+        status: "en_redaction",
+        idea_id: idea.id,
+      })
+      .select("id")
+      .single();
+    if (data) navigate({ to: "/studio", search: { post: data.id } });
   }
 
   const pillarById = useMemo(
@@ -227,6 +246,7 @@ function IdeasPage() {
                 pillar={idea.pillar_id ? pillarById[idea.pillar_id] : undefined}
                 onEdit={() => setEditingId(idea.id)}
                 onDelete={() => removeIdea(idea.id)}
+                onTransform={() => transformToPost(idea)}
               />
             ),
           )}
@@ -273,11 +293,13 @@ function IdeaCard({
   pillar,
   onEdit,
   onDelete,
+  onTransform,
 }: {
   idea: Idea;
   pillar?: Pillar;
   onEdit: () => void;
   onDelete: () => void;
+  onTransform: () => void;
 }) {
   return (
     <article className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-5 space-y-3 group">
@@ -330,11 +352,7 @@ function IdeaCard({
       <div className="pt-2 pl-6">
         <button
           type="button"
-          onClick={() =>
-            alert(
-              "Le Studio de rédaction arrive à la prochaine étape. Le lien sera branché à ce moment-là.",
-            )
-          }
+          onClick={onTransform}
           className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
         >
           Transformer en post <ArrowRight className="h-3.5 w-3.5" />
