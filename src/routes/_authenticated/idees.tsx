@@ -120,6 +120,24 @@ function IdeasPage() {
     await supabase.from("ideas").delete().eq("id", id);
   }
 
+  async function transformToPost(idea: Idea) {
+    if (!userId) return;
+    const { data } = await supabase
+      .from("posts")
+      .insert({
+        user_id: userId,
+        title: idea.title,
+        content: idea.note ?? "",
+        pillar_id: idea.pillar_id,
+        channel: idea.channel,
+        status: "en_redaction",
+        idea_id: idea.id,
+      })
+      .select("id")
+      .single();
+    if (data) navigate({ to: "/studio", search: { post: data.id } });
+  }
+
   const pillarById = useMemo(
     () => Object.fromEntries(pillars.map((p) => [p.id, p])),
     [pillars],
