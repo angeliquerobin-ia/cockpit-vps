@@ -225,6 +225,39 @@ function ReelsPage() {
     navigate({ to: "/studio", search: { post: data.id } });
   }
 
+  const subtitleFn = useServerFn(subtitleReel);
+  const [subtitling, setSubtitling] = useState<string | null>(null);
+
+  async function generateSubtitles(reel: Reel) {
+    if (!userId || subtitling) return;
+    setError(null);
+    setSubtitling(reel.id);
+    try {
+      const r = await subtitleFn({ data: { reelId: reel.id } });
+      setReels((prev) =>
+        prev.map((x) =>
+          x.id === reel.id
+            ? {
+                ...x,
+                status: "sous_titre",
+                subtitled_video_url: r.subtitledUrl ?? x.subtitled_video_url,
+              }
+            : x,
+        ),
+      );
+      setTransformFlash(
+        r.subtitledUrl
+          ? `Sous-titrage prêt pour « ${reel.title || "ce réel"} ».`
+          : `Sous-titrage lancé pour « ${reel.title || "ce réel"} ».`,
+      );
+      setTimeout(() => setTransformFlash(null), 4000);
+    } catch (e: any) {
+      setError(e?.message ?? "Sous-titrage impossible.");
+    } finally {
+      setSubtitling(null);
+    }
+  }
+
 
   const filtered = reels.filter((r) => {
     if (fPillar !== "all" && r.pillar_id !== fPillar) return false;
