@@ -405,6 +405,8 @@ function ReelCard({
   onPlay,
   onEdit,
   onDelete,
+  onTransformIdea,
+  onTransformPost,
 }: {
   reel: Reel;
   url?: string;
@@ -412,7 +414,11 @@ function ReelCard({
   onPlay: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onTransformIdea: () => void;
+  onTransformPost: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const hasTranscription = !!reel.transcription?.trim();
   return (
     <article className="bg-card rounded-2xl shadow-[var(--shadow-soft)] overflow-hidden group">
       <button
