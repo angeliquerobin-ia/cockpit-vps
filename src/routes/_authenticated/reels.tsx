@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,9 @@ import {
   Pencil,
   Crop,
   Loader2,
+  Wand2,
+  Lightbulb,
+  PenLine,
 } from "lucide-react";
 import { CHANNEL_LABELS, ALL_CHANNELS } from "@/lib/channel-prompts";
 import { convertReelToVertical } from "@/lib/cloudinary.functions";
@@ -25,6 +28,7 @@ type Reel = {
   channel: string | null;
   status: ReelStatus;
   video_path: string;
+  transcription: string;
   created_at: string;
 };
 
@@ -42,11 +46,13 @@ export const Route = createFileRoute("/_authenticated/reels")({
 });
 
 function ReelsPage() {
+  const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [reels, setReels] = useState<Reel[]>([]);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [transformFlash, setTransformFlash] = useState<string | null>(null);
   const [uploading, setUploading] = useState<{
     name: string;
     progress: number;
@@ -75,7 +81,7 @@ function ReelsPage() {
         .order("created_at"),
       supabase
         .from("reels")
-        .select("id,title,pillar_id,channel,status,video_path,created_at")
+        .select("id,title,pillar_id,channel,status,video_path,transcription,created_at")
         .eq("user_id", uid)
         .order("created_at", { ascending: false }),
     ]);
@@ -177,6 +183,46 @@ function ReelsPage() {
     await supabase.from("reels").update(rest as any).eq("id", id);
   }
 
+  async function transformToIdea(reel: Reel) {
+    if (!userId || !reel.transcription?.trim()) return;
+    const title = reel.title.trim() || "Idée tirée d'un réel";
+    const { error } = await supabase.from("ideas").insert({
+      user_id: userId,
+      title,
+      note: reel.transcription,
+      pillar_id: reel.pillar_id,
+      channel: reel.channel as any,
+    });
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setTransformFlash(`« ${title} » ajoutée à vos idées.`);
+    setTimeout(() => setTransformFlash(null), 4000);
+  }
+
+  async function transformToPost(reel: Reel) {
+    if (!userId || !reel.transcription?.trim()) return;
+    const { data, error } = await supabase
+      .from("posts")
+      .insert({
+        user_id: userId,
+        title: reel.title.trim() || "Post tiré d'un réel",
+        content: reel.transcription,
+        channel: reel.channel as any,
+        pillar_id: reel.pillar_id,
+        status: "en_redaction",
+      })
+      .select("id")
+      .single();
+    if (error || !data) {
+      setError(error?.message ?? "Création du post impossible.");
+      return;
+    }
+    navigate({ to: "/studio", search: { post: data.id } });
+  }
+
+
   const filtered = reels.filter((r) => {
     if (fPillar !== "all" && r.pillar_id !== fPillar) return false;
     if (fChannel !== "all" && r.channel !== fChannel) return false;
@@ -241,6 +287,12 @@ function ReelsPage() {
         </p>
       )}
 
+      {transformFlash && (
+        <p className="text-sm rounded-lg bg-primary/10 text-foreground px-3 py-2">
+          <em>{transformFlash}</em>
+        </p>
+      )}
+
       <div className="flex items-center gap-3 flex-wrap">
         <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.15em] opacity-70">
           <Filter className="h-3.5 w-3.5" /> Filtrer
@@ -293,6 +345,8 @@ function ReelsPage() {
               onPlay={() => setPlaying(r)}
               onEdit={() => setEditing(r)}
               onDelete={() => removeReel(r)}
+              onTransformIdea={() => transformToIdea(r)}
+              onTransformPost={() => transformToPost(r)}
             />
           ))}
         </div>
@@ -357,6 +411,8 @@ function ReelCard({
   onPlay,
   onEdit,
   onDelete,
+  onTransformIdea,
+  onTransformPost,
 }: {
   reel: Reel;
   url?: string;
@@ -364,7 +420,11 @@ function ReelCard({
   onPlay: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onTransformIdea: () => void;
+  onTransformPost: () => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const hasTranscription = !!reel.transcription?.trim();
   return (
     <article className="bg-card rounded-2xl shadow-[var(--shadow-soft)] overflow-hidden group">
       <button
@@ -417,7 +477,58 @@ function ReelCard({
             {statusLabel(reel.status)}
           </span>
         </div>
-        <div className="flex justify-end gap-1 pt-1">
+        <div className="flex justify-end items-center gap-1 pt-1 relative">
+          {hasTranscription && (
+            <div className="relative mr-auto">
+              <button
+                onClick={() => setMenuOpen((v) => !v)}
+                className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs hover:bg-muted text-foreground/80"
+              >
+                <Wand2 className="h-3.5 w-3.5" /> Transformer en contenu
+              </button>
+              {menuOpen && (
+                <>
+                  <button
+                    className="fixed inset-0 z-10 cursor-default"
+                    onClick={() => setMenuOpen(false)}
+                    aria-label="Fermer le menu"
+                  />
+                  <div className="absolute left-0 bottom-full mb-1 z-20 w-60 rounded-lg bg-popover border border-border shadow-[var(--shadow-soft)] py-1">
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onTransformIdea();
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-start gap-2"
+                    >
+                      <Lightbulb className="h-4 w-4 mt-0.5 shrink-0 opacity-70" />
+                      <span>
+                        <span className="block">Créer une idée</span>
+                        <span className="block text-[11px] opacity-60">
+                          Dans le réservoir d'idées
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onTransformPost();
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-start gap-2"
+                    >
+                      <PenLine className="h-4 w-4 mt-0.5 shrink-0 opacity-70" />
+                      <span>
+                        <span className="block">Créer un post</span>
+                        <span className="block text-[11px] opacity-60">
+                          Ouvre le Studio pré-rempli
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
           <button
             onClick={onEdit}
             aria-label="Modifier"
