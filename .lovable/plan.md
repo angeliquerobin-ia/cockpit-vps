@@ -1,68 +1,29 @@
-
-# Bascule de l'agent IA sur l'API OpenAI (GPT-5)
-
 ## Objectif
 
-Remplacer l'appel à Lovable AI Gateway par un appel direct à l'**API OpenAI** avec ton compte personnel et ta clé API. Le modèle utilisé sera **GPT-5** pour la meilleure qualité rédactionnelle française.
+Remplacer OpenAI direct par **OpenRouter** pour l'agent de rédaction, afin d'utiliser ta clé API OpenRouter (et plus de souci de quota OpenAI).
 
-Aucun changement visible côté interface : tous les boutons de génération du Studio (génération, raccourcir, réécrire l'accroche, plus incarné, ajouter un CTA, hashtags) continuent à fonctionner exactement comme avant.
+## Étapes
 
-## Ce que tu dois préparer de ton côté
+1. **Ajouter ta clé OpenRouter en secret** (`OPENROUTER_API_KEY`) — tu la colleras dans le formulaire sécurisé. À récupérer sur https://openrouter.ai/keys.
 
-Avant que je touche au code, il te faut une clé API OpenAI :
+2. **Renommer le provider serveur** : `src/lib/openai-provider.server.ts` → `src/lib/openrouter-provider.server.ts`
+   - `baseURL` : `https://openrouter.ai/api/v1`
+   - Header `Authorization: Bearer ${apiKey}`
+   - (optionnel) headers `HTTP-Referer` et `X-Title` recommandés par OpenRouter pour identifier l'app.
 
-1. Va sur **platform.openai.com** (différent de chat.openai.com — c'est le portail développeur d'OpenAI).
-2. Connecte-toi (tu peux utiliser le même compte que ton ChatGPT Plus, ou en créer un nouveau).
-3. Menu **Settings → Billing** → ajoute un moyen de paiement et un crédit initial (10 € suffisent pour démarrer largement).
-4. Menu **API keys → Create new secret key** → donne-lui un nom (ex. *Cockpit*) → copie la clé qui commence par `sk-...`.
-5. **Garde cette clé ouverte dans un onglet** — OpenAI ne te la remontrera plus après.
+3. **Mettre à jour `src/lib/ai-writer.functions.ts`** :
+   - Lire `process.env.OPENROUTER_API_KEY` au lieu d'`OPENAI_API_KEY`.
+   - Importer le nouveau provider.
+   - Modèle par défaut : `openai/gpt-5` (slug OpenRouter pour GPT-5).
 
-Quand tu seras prêt, je te demanderai cette clé via un formulaire sécurisé Lovable (jamais en clair dans le chat).
+4. **Test rapide** : tu cliques sur "Générer" dans l'éditeur depuis la preview pour valider que la réponse arrive bien.
 
-## Ce que je vais faire côté code
+## Détails techniques
 
-### Modifications
+- OpenRouter est 100 % compatible OpenAI ; on garde le même client `@ai-sdk/openai-compatible` et `generateText` du AI SDK, donc zéro changement côté UI.
+- Le slug `openai/gpt-5` peut être remplacé par n'importe quel modèle dispo sur OpenRouter (Claude, Gemini, Llama, etc.) — on pourra le rendre configurable plus tard si tu veux.
+- Aucune modification de la base de données ni du frontend.
 
-1. **Stocker `OPENAI_API_KEY` comme secret** côté serveur Cockpit (via le formulaire sécurisé).
+## Question
 
-2. **Créer `src/lib/openai-provider.server.ts`** : un petit helper équivalent à l'actuel `ai-gateway.server.ts`, qui configure le SDK AI sur l'endpoint OpenAI officiel (`https://api.openai.com/v1`) avec l'authentification standard `Authorization: Bearer sk-...`.
-
-3. **Modifier `src/lib/ai-writer.functions.ts`** :
-   - Remplacer la lecture de `LOVABLE_API_KEY` par `OPENAI_API_KEY`.
-   - Remplacer l'appel à `createLovableAiGatewayProvider` par le nouveau provider OpenAI.
-   - Remplacer le modèle `google/gemini-3-flash-preview` par `gpt-5`.
-   - Conserver à l'identique : la chaîne de contexte (stratégie + pilier + consigne canal + sujet), le prompt système français, la logique d'actions (générer / raccourcir / réécrire l'accroche / etc.).
-
-4. **Supprimer la dépendance à Lovable AI** pour la partie rédactionnelle. Le helper `ai-gateway.server.ts` peut rester en place pour un éventuel usage futur, mais il ne sera plus appelé.
-
-### Détails techniques
-
-- Le SDK AI utilisé reste le même (`ai` + `@ai-sdk/openai-compatible`), donc aucune nouvelle dépendance npm à installer.
-- L'appel passe par le serveur (server function TanStack Start déjà en place), ta clé OpenAI **ne sort jamais vers le navigateur**.
-- La fonction `aiWrite` est protégée par `requireSupabaseAuth` : seuls les utilisateurs connectés peuvent déclencher des appels OpenAI.
-
-## Ce qui ne change pas dans cette étape
-
-- **Lovable Cloud** reste actif pour la base de données, l'auth et le storage (on s'occupera de la migration vers ton VPS souverain dans une étape dédiée, plus tard).
-- **N8N** reste le seul interlocuteur de Metricool pour la publication.
-- **Cloudinary** reste utilisé pour les Réels.
-- L'interface du Studio, du Calendrier, des Réglages : **inchangée**.
-
-## Coût attendu
-
-Avec GPT-5 sur des posts LinkedIn / Instagram (quelques centaines de tokens en entrée, quelques centaines en sortie) :
-
-- **Génération d'un post complet** : ~5 à 10 centimes
-- **Raccourcir / réécrire l'accroche** : ~3 à 5 centimes
-- **Hashtags** : ~1 à 2 centimes
-
-Pour un usage type « 1 à 2 posts par jour » : compte **3 à 10 € / mois** d'API OpenAI.
-
-## Prochaines étapes après cette bascule
-
-Une fois GPT-5 branché et testé, on pourra enchaîner sur :
-
-- **Étape 11 et suivantes** : les fonctionnalités qui restent (stats, concurrents, etc.) — elles utiliseront automatiquement OpenAI dès qu'elles passeront par l'agent.
-- **Migration self-host** (chantier dédié, quand l'app sera fonctionnellement complète) : export du code, mise en place d'un Supabase auto-hébergé sur ton VPS, déploiement du frontend.
-
-Quand tu as ta clé `sk-...` sous la main, dis-moi simplement *« j'ai la clé »* et je lance le formulaire sécurisé + les modifications dans la foulée.
+Tu confirmes qu'on garde **GPT-5 via OpenRouter** comme modèle par défaut, ou tu veux qu'on passe sur un autre (ex. `anthropic/claude-sonnet-4.5`, `google/gemini-2.5-pro`) ?
