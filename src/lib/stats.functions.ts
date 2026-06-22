@@ -70,6 +70,7 @@ export const analyzePerformance = createServerFn({ method: "POST" })
         .from("posts")
         .select("title, channel, pillar_id, status, published_at")
         .eq("user_id", userId)
+        .is("deleted_at", null)
         .order("published_at", { ascending: false })
         .limit(200),
       supabase
