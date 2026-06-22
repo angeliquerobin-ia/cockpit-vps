@@ -154,12 +154,15 @@ function StudioPage() {
         post={selected}
         pillars={pillars}
         pillarById={pillarById}
+        userId={userId}
         onBack={() => navigate({ to: "/studio", search: {} })}
         onSave={(patch) => savePost(selected.id, patch)}
         onDelete={() => removePost(selected.id)}
+        onRefresh={() => userId && loadAll(userId)}
       />
     );
   }
+
 
   return (
     <div className="space-y-10">
