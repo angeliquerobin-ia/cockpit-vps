@@ -175,6 +175,56 @@ export type Database = {
           },
         ]
       }
+      reels: {
+        Row: {
+          channel: Database["public"]["Enums"]["pillar_channel"] | null
+          created_at: string
+          id: string
+          pillar_id: string | null
+          status: Database["public"]["Enums"]["reel_status"]
+          subtitles: string
+          title: string
+          transcription: string
+          updated_at: string
+          user_id: string
+          video_path: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["pillar_channel"] | null
+          created_at?: string
+          id?: string
+          pillar_id?: string | null
+          status?: Database["public"]["Enums"]["reel_status"]
+          subtitles?: string
+          title?: string
+          transcription?: string
+          updated_at?: string
+          user_id: string
+          video_path: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["pillar_channel"] | null
+          created_at?: string
+          id?: string
+          pillar_id?: string | null
+          status?: Database["public"]["Enums"]["reel_status"]
+          subtitles?: string
+          title?: string
+          transcription?: string
+          updated_at?: string
+          user_id?: string
+          video_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reels_pillar_id_fkey"
+            columns: ["pillar_id"]
+            isOneToOne: false
+            referencedRelation: "content_pillars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strategy_documents: {
         Row: {
           content: Json
@@ -215,6 +265,7 @@ export type Database = {
         | "podcast"
         | "substack"
       post_status: "idee" | "en_redaction" | "pret" | "programme" | "publie"
+      reel_status: "a_sous_titrer" | "sous_titre" | "publie"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -351,6 +402,7 @@ export const Constants = {
         "substack",
       ],
       post_status: ["idee", "en_redaction", "pret", "programme", "publie"],
+      reel_status: ["a_sous_titrer", "sous_titre", "publie"],
     },
   },
 } as const
