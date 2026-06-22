@@ -293,11 +293,13 @@ function IdeaCard({
   pillar,
   onEdit,
   onDelete,
+  onTransform,
 }: {
   idea: Idea;
   pillar?: Pillar;
   onEdit: () => void;
   onDelete: () => void;
+  onTransform: () => void;
 }) {
   return (
     <article className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-5 space-y-3 group">
