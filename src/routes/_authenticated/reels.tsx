@@ -339,6 +339,8 @@ function ReelsPage() {
               onPlay={() => setPlaying(r)}
               onEdit={() => setEditing(r)}
               onDelete={() => removeReel(r)}
+              onTransformIdea={() => transformToIdea(r)}
+              onTransformPost={() => transformToPost(r)}
             />
           ))}
         </div>
