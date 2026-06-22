@@ -52,6 +52,8 @@ const ACTION_INSTRUCTIONS: Record<string, string> = {
     "Ajoute (ou remplace) un appel à l'action clair, doux et adapté à la fin du post fourni. Renvoie le post complet.",
   hashtags:
     "Propose une sélection de 10 à 15 hashtags pertinents, en français, mélangeant volumes large et niche. Renvoie uniquement la liste, séparée par des espaces.",
+  spellcheck:
+    "Corrige UNIQUEMENT les fautes d'orthographe, de grammaire, de conjugaison, d'accord et de ponctuation dans le texte fourni. Tu dois absolument GARDER les phrases telles qu'elles sont : ne reformule rien, ne change pas le ton, ne déplace pas les mots, ne remplace pas de vocabulaire, ne raccourcis ni n'allonges aucune phrase. Conserve à l'identique la mise en forme, les sauts de ligne, les emojis, les hashtags et la ponctuation stylistique voulue. Renvoie uniquement le texte corrigé, sans commentaire, sans préambule, sans guillemets.",
 };
 
 export const aiWrite = createServerFn({ method: "POST" })
