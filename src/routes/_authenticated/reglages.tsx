@@ -31,6 +31,7 @@ type Settings = {
   webhook_publish: string;
   webhook_stats: string;
   webhook_competitors: string;
+  webhook_competitors_content: string;
   webhook_transcription: string;
   webhook_subtitles: string;
 };
@@ -41,6 +42,7 @@ const DEFAULT_SETTINGS: Settings = {
   webhook_publish: "",
   webhook_stats: "",
   webhook_competitors: "",
+  webhook_competitors_content: "",
   webhook_transcription: "",
   webhook_subtitles: "",
 };
