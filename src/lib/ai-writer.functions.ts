@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { createOpenAIProvider } from "./openai-provider.server";
 import { DEFAULT_CHANNEL_PROMPTS, CHANNEL_LABELS } from "./channel-prompts";
 
 const InputSchema = z.object({
@@ -57,8 +57,8 @@ export const aiWrite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY manquant");
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error("OPENAI_API_KEY manquant");
 
     const { supabase, userId } = context;
 
@@ -122,8 +122,8 @@ export const aiWrite = createServerFn({ method: "POST" })
     const action =
       ACTION_INSTRUCTIONS[data.mode] ?? ACTION_INSTRUCTIONS.generate;
 
-    const gateway = createLovableAiGatewayProvider(apiKey);
-    const model = gateway("google/gemini-3-flash-preview");
+    const openai = createOpenAIProvider(apiKey);
+    const model = openai("gpt-5");
 
     const result = await generateText({
       model,
