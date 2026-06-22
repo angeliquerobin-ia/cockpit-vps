@@ -88,6 +88,17 @@ function CalendarPage() {
   });
   const [dragId, setDragId] = useState<string | null>(null);
   const [overDay, setOverDay] = useState<string | null>(null);
+  const [openedPost, setOpenedPost] = useState<Post | null>(null);
+  const [publishPost, setPublishPost] = useState<Post | null>(null);
+
+  async function reloadPosts(uid: string) {
+    const { data } = await supabase
+      .from("posts")
+      .select("id,title,channel,pillar_id,scheduled_at")
+      .eq("user_id", uid)
+      .not("scheduled_at", "is", null);
+    setPosts((data ?? []) as Post[]);
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
