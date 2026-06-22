@@ -14,7 +14,8 @@ import {
 
 type Props = { userId: string };
 
-const EMPTY_DOC = { type: "doc", content: [] } as const;
+const EMPTY_DOC = { type: "doc", content: [] };
+
 
 export function StrategyEditor({ userId }: Props) {
   const [loaded, setLoaded] = useState(false);
