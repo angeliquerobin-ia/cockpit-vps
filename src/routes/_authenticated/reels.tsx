@@ -183,6 +183,46 @@ function ReelsPage() {
     await supabase.from("reels").update(rest as any).eq("id", id);
   }
 
+  async function transformToIdea(reel: Reel) {
+    if (!userId || !reel.transcription?.trim()) return;
+    const title = reel.title.trim() || "Idée tirée d'un réel";
+    const { error } = await supabase.from("ideas").insert({
+      user_id: userId,
+      title,
+      note: reel.transcription,
+      pillar_id: reel.pillar_id,
+      channel: reel.channel as any,
+    });
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setTransformFlash(`« ${title} » ajoutée à vos idées.`);
+    setTimeout(() => setTransformFlash(null), 4000);
+  }
+
+  async function transformToPost(reel: Reel) {
+    if (!userId || !reel.transcription?.trim()) return;
+    const { data, error } = await supabase
+      .from("posts")
+      .insert({
+        user_id: userId,
+        title: reel.title.trim() || "Post tiré d'un réel",
+        content: reel.transcription,
+        channel: reel.channel as any,
+        pillar_id: reel.pillar_id,
+        status: "en_redaction",
+      })
+      .select("id")
+      .single();
+    if (error || !data) {
+      setError(error?.message ?? "Création du post impossible.");
+      return;
+    }
+    navigate({ to: "/studio", search: { post: data.id } });
+  }
+
+
   const filtered = reels.filter((r) => {
     if (fPillar !== "all" && r.pillar_id !== fPillar) return false;
     if (fChannel !== "all" && r.channel !== fChannel) return false;
