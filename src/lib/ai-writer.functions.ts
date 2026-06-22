@@ -134,3 +134,90 @@ export const aiWrite = createServerFn({ method: "POST" })
 
     return { text: result.text.trim() };
   });
+
+const SuggestInputSchema = z.object({
+  count: z.number().int().min(1).max(20).optional().default(8),
+  hint: z.string().optional().default(""),
+});
+
+export const aiSuggestIdeas = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SuggestInputSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
+
+    const { supabase, userId } = context;
+    const [stratRes, pillarsRes] = await Promise.all([
+      supabase
+        .from("strategy_documents")
+        .select("content")
+        .eq("user_id", userId)
+        .maybeSingle(),
+      supabase
+        .from("content_pillars")
+        .select("id,name,description,channel")
+        .eq("user_id", userId),
+    ]);
+
+    const strategyText = plainText((stratRes.data as any)?.content).trim();
+    const pillars = (pillarsRes.data ?? []) as Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      channel: string | null;
+    }>;
+
+    const pillarsBlock = pillars.length
+      ? pillars
+          .map(
+            (p) =>
+              `- **${p.name}**${p.channel ? ` (canal habituel : ${CHANNEL_LABELS[p.channel] ?? p.channel})` : ""} — ${p.description ?? ""}`,
+          )
+          .join("\n")
+      : "_Aucun pilier défini._";
+
+    const contextBlock = [
+      strategyText
+        ? `## Ligne éditoriale & stratégie\n${strategyText}`
+        : "",
+      `## Piliers de contenu\n${pillarsBlock}`,
+      data.hint?.trim() ? `## Orientation demandée\n${data.hint.trim()}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    const openrouter = createOpenRouterProvider(apiKey);
+    const model = openrouter("openai/gpt-5");
+
+    const result = await generateText({
+      model,
+      system:
+        "Tu es une directrice éditoriale qui aide une coach à générer des idées de contenu. Tu réponds STRICTEMENT en JSON valide, sans texte hors JSON, sans bloc de code markdown.",
+      prompt: `${contextBlock}\n\n---\n\n## Tâche\nPropose ${data.count} idées de contenu originales, fidèles à la ligne éditoriale et ancrées dans les piliers ci-dessus. Pour chaque idée : un titre court et incarné, un angle (1 à 2 phrases qui précisent la promesse/le point de vue), et le nom du pilier le plus pertinent parmi ceux listés (champ "pillar_name", exactement comme écrit ci-dessus, ou null si aucun ne colle).\n\nRenvoie uniquement un JSON de la forme :\n{"ideas":[{"title":"...","angle":"...","pillar_name":"..."}]}`,
+    });
+
+    let parsed: { ideas: Array<{ title: string; angle: string; pillar_name: string | null }> } = { ideas: [] };
+    try {
+      const raw = result.text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = { ideas: [] };
+    }
+
+    const ideas = (parsed.ideas ?? [])
+      .filter((i) => i && typeof i.title === "string" && i.title.trim())
+      .map((i) => {
+        const match = pillars.find(
+          (p) => p.name.toLowerCase() === (i.pillar_name ?? "").toLowerCase(),
+        );
+        return {
+          title: i.title.trim(),
+          angle: (i.angle ?? "").trim(),
+          pillar_id: match?.id ?? null,
+          channel: (match?.channel ?? null) as string | null,
+        };
+      });
+
+    return { ideas };
+  });
