@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Upload,
@@ -9,8 +10,11 @@ import {
   Play,
   X,
   Pencil,
+  Crop,
+  Loader2,
 } from "lucide-react";
 import { CHANNEL_LABELS, ALL_CHANNELS } from "@/lib/channel-prompts";
+import { convertReelToVertical } from "@/lib/cloudinary.functions";
 
 type Pillar = { id: string; name: string; color: string };
 type ReelStatus = "a_sous_titrer" | "sous_titre" | "publie";
