@@ -252,6 +252,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          active_channels: string[]
+          created_at: string
+          metricool_plan: string
+          updated_at: string
+          user_id: string
+          webhook_competitors: string
+          webhook_publish: string
+          webhook_stats: string
+          webhook_subtitles: string
+          webhook_transcription: string
+        }
+        Insert: {
+          active_channels?: string[]
+          created_at?: string
+          metricool_plan?: string
+          updated_at?: string
+          user_id: string
+          webhook_competitors?: string
+          webhook_publish?: string
+          webhook_stats?: string
+          webhook_subtitles?: string
+          webhook_transcription?: string
+        }
+        Update: {
+          active_channels?: string[]
+          created_at?: string
+          metricool_plan?: string
+          updated_at?: string
+          user_id?: string
+          webhook_competitors?: string
+          webhook_publish?: string
+          webhook_stats?: string
+          webhook_subtitles?: string
+          webhook_transcription?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
