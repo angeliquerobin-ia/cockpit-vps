@@ -125,7 +125,9 @@ export type Database = {
           created_at: string
           id: string
           idea_id: string | null
+          metricool_id: string | null
           pillar_id: string | null
+          published_at: string | null
           scheduled_at: string | null
           status: Database["public"]["Enums"]["post_status"]
           title: string
@@ -138,7 +140,9 @@ export type Database = {
           created_at?: string
           id?: string
           idea_id?: string | null
+          metricool_id?: string | null
           pillar_id?: string | null
+          published_at?: string | null
           scheduled_at?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           title?: string
@@ -151,7 +155,9 @@ export type Database = {
           created_at?: string
           id?: string
           idea_id?: string | null
+          metricool_id?: string | null
           pillar_id?: string | null
+          published_at?: string | null
           scheduled_at?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           title?: string
