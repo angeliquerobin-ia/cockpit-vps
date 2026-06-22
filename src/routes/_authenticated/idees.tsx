@@ -103,6 +103,7 @@ function IdeasPage() {
         .from("ideas")
         .select("id,title,note,pillar_id,channel,status,created_at")
         .eq("user_id", uid)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false }),
     ]);
     setPillars((p.data ?? []) as Pillar[]);
