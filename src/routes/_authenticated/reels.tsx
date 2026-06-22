@@ -532,7 +532,7 @@ function EditModal({
       onClick={onClose}
     >
       <div
-        className="bg-card rounded-2xl shadow-[var(--shadow-soft)] max-w-md w-full p-6 space-y-4"
+        className="bg-card rounded-2xl shadow-[var(--shadow-soft)] max-w-md w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
