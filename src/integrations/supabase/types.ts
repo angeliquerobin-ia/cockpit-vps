@@ -91,6 +91,63 @@ export type Database = {
           },
         ]
       }
+      posts: {
+        Row: {
+          channel: Database["public"]["Enums"]["pillar_channel"] | null
+          content: string
+          created_at: string
+          id: string
+          idea_id: string | null
+          pillar_id: string | null
+          scheduled_at: string | null
+          status: Database["public"]["Enums"]["post_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["pillar_channel"] | null
+          content?: string
+          created_at?: string
+          id?: string
+          idea_id?: string | null
+          pillar_id?: string | null
+          scheduled_at?: string | null
+          status?: Database["public"]["Enums"]["post_status"]
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["pillar_channel"] | null
+          content?: string
+          created_at?: string
+          id?: string
+          idea_id?: string | null
+          pillar_id?: string | null
+          scheduled_at?: string | null
+          status?: Database["public"]["Enums"]["post_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_idea_id_fkey"
+            columns: ["idea_id"]
+            isOneToOne: false
+            referencedRelation: "ideas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_pillar_id_fkey"
+            columns: ["pillar_id"]
+            isOneToOne: false
+            referencedRelation: "content_pillars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       strategy_documents: {
         Row: {
           content: Json
@@ -130,6 +187,7 @@ export type Database = {
         | "instagram_chroniques_cosmiques"
         | "podcast"
         | "substack"
+      post_status: "idee" | "en_redaction" | "pret" | "programme" | "publie"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -265,6 +323,7 @@ export const Constants = {
         "podcast",
         "substack",
       ],
+      post_status: ["idee", "en_redaction", "pret", "programme", "publie"],
     },
   },
 } as const
