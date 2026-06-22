@@ -208,7 +208,7 @@ function IdeasPage() {
       .select("id")
       .single();
     if (!data) return;
-    await supabase.from("ideas").delete().eq("id", idea.id);
+    await supabase.from("ideas").update({ deleted_at: new Date().toISOString() } as any).eq("id", idea.id);
     setIdeas((prev) => prev.filter((i) => i.id !== idea.id));
     navigate({ to: "/studio", search: { post: data.id } });
   }
