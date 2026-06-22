@@ -533,6 +533,10 @@ function PostEditor({
                 rows={18}
                 className="w-full bg-transparent border-0 outline-none text-base leading-relaxed resize-none placeholder:opacity-40"
               />
+              <SpellCheckButton
+                content={content}
+                onCorrected={setContent}
+              />
             </div>
           </div>
 
