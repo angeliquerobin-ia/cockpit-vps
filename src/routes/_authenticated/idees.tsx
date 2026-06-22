@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { aiSuggestIdeas } from "@/lib/ai-writer.functions";
 import {
   Plus,
   Pencil,
@@ -9,6 +11,7 @@ import {
   Check,
   X,
   Filter,
+  Sparkles,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/idees")({
@@ -58,12 +61,27 @@ const statusLabel = (s: Status) =>
 
 function IdeasPage() {
   const navigate = useNavigate();
+  const suggestIdeasFn = useServerFn(aiSuggestIdeas);
   const [userId, setUserId] = useState<string | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [quickTitle, setQuickTitle] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // AI suggestions
+  type Suggestion = {
+    key: string;
+    title: string;
+    angle: string;
+    pillar_id: string | null;
+    channel: Channel | null;
+    added?: boolean;
+  };
+  const [suggestHint, setSuggestHint] = useState("");
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
 
   // filters
   const [fPillar, setFPillar] = useState<string>("all");
@@ -119,6 +137,60 @@ function IdeasPage() {
     setIdeas((prev) => prev.filter((i) => i.id !== id));
     await supabase.from("ideas").delete().eq("id", id);
   }
+
+  async function runSuggest() {
+    setSuggesting(true);
+    setSuggestError(null);
+    try {
+      const res = await suggestIdeasFn({
+        data: { count: 8, hint: suggestHint.trim() },
+      });
+      const list = (res.ideas ?? []).map((s, idx) => ({
+        key: `${Date.now()}-${idx}`,
+        title: s.title,
+        angle: s.angle,
+        pillar_id: s.pillar_id,
+        channel: s.channel as Channel | null,
+      }));
+      setSuggestions(list);
+    } catch (e: any) {
+      setSuggestError(e?.message ?? "Erreur lors de la génération");
+    } finally {
+      setSuggesting(false);
+    }
+  }
+
+  async function addSuggestion(s: Suggestion) {
+    if (!userId) return;
+    const { data } = await supabase
+      .from("ideas")
+      .insert({
+        user_id: userId,
+        title: s.title,
+        note: s.angle,
+        pillar_id: s.pillar_id,
+        channel: s.channel,
+      })
+      .select("id,title,note,pillar_id,channel,status,created_at")
+      .single();
+    if (data) {
+      setIdeas((prev) => [data as Idea, ...prev]);
+      setSuggestions((prev) =>
+        prev.map((x) => (x.key === s.key ? { ...x, added: true } : x)),
+      );
+    }
+  }
+
+  function updateSuggestion(key: string, patch: Partial<Suggestion>) {
+    setSuggestions((prev) =>
+      prev.map((s) => (s.key === key ? { ...s, ...patch } : s)),
+    );
+  }
+
+  function dismissSuggestion(key: string) {
+    setSuggestions((prev) => prev.filter((s) => s.key !== key));
+  }
+
 
   async function transformToPost(idea: Idea) {
     if (!userId) return;
@@ -184,6 +256,117 @@ function IdeasPage() {
           Ajouter
         </button>
       </form>
+
+      {/* AI suggestions */}
+      <section className="bg-card rounded-2xl p-5 shadow-[var(--shadow-soft)] space-y-4">
+        <div className="flex items-start gap-4 flex-wrap">
+          <div className="flex-1 min-w-[220px] space-y-1">
+            <h2 className="text-2xl flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Suggérer des idées
+            </h2>
+            <p className="text-sm opacity-70">
+              <em>L'agent IA lit votre stratégie et vos piliers, puis propose des pistes à garder ou écarter.</em>
+            </p>
+          </div>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <input
+              value={suggestHint}
+              onChange={(e) => setSuggestHint(e.target.value)}
+              placeholder="Orientation facultative (saison, thème…)"
+              className="flex-1 md:w-72 rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              onClick={runSuggest}
+              disabled={suggesting}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              <Sparkles className="h-4 w-4" />
+              {suggesting ? "Génération…" : "Suggérer"}
+            </button>
+          </div>
+        </div>
+
+        {suggestError && (
+          <p className="text-sm text-destructive">{suggestError}</p>
+        )}
+
+        {suggestions.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {suggestions.map((s) => (
+              <article
+                key={s.key}
+                className="bg-popover rounded-xl p-4 space-y-3 border border-border/60"
+              >
+                <div className="flex items-start gap-2">
+                  <h3 className="text-lg leading-snug flex-1">{s.title}</h3>
+                  <button
+                    onClick={() => dismissSuggestion(s.key)}
+                    aria-label="Écarter"
+                    className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-foreground/60"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                {s.angle && (
+                  <p className="text-sm opacity-80 leading-relaxed">{s.angle}</p>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    value={s.pillar_id ?? ""}
+                    onChange={(e) =>
+                      updateSuggestion(s.key, {
+                        pillar_id: e.target.value || null,
+                      })
+                    }
+                    className="rounded-lg bg-background border border-input px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">— Pilier —</option>
+                    {pillars.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={s.channel ?? ""}
+                    onChange={(e) =>
+                      updateSuggestion(s.key, {
+                        channel: (e.target.value || null) as Channel | null,
+                      })
+                    }
+                    className="rounded-lg bg-background border border-input px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">— Canal —</option>
+                    {CHANNELS.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => addSuggestion(s)}
+                    disabled={s.added}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm hover:opacity-90 disabled:opacity-60 transition-opacity"
+                  >
+                    {s.added ? (
+                      <>
+                        <Check className="h-4 w-4" /> Ajoutée
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" /> Ajouter à mes idées
+                      </>
+                    )}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
