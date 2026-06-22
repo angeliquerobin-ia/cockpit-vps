@@ -1,8 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { refreshCompetitors } from "@/lib/competitors.functions";
+import {
+  refreshCompetitors,
+  analyzeCompetitorsMetrics,
+  analyzeCompetitorsContent,
+  createIdeaFromSuggestion,
+} from "@/lib/competitors.functions";
 import { CHANNEL_LABELS } from "@/lib/channel-prompts";
 import {
   Plus,
@@ -14,6 +19,10 @@ import {
   ArrowUp,
   ArrowDown,
   Minus,
+  Sparkles,
+  BookOpen,
+  Lightbulb,
+  Loader2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/concurrents")({
