@@ -31,6 +31,7 @@ type Reel = {
   status: ReelStatus;
   video_path: string;
   transcription: string;
+  subtitled_video_url: string | null;
   created_at: string;
 };
 
