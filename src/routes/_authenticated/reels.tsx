@@ -658,50 +658,20 @@ function PlayerModal({
 function EditModal({
   reel,
   pillars,
-  url,
   onClose,
   onSave,
-  onConverted,
 }: {
   reel: Reel;
   pillars: Pillar[];
   url?: string;
   onClose: () => void;
   onSave: (patch: Partial<Reel>) => void;
-  onConverted: () => Promise<void> | void;
+  onConverted?: () => Promise<void> | void;
 }) {
   const [title, setTitle] = useState(reel.title);
   const [pillarId, setPillarId] = useState(reel.pillar_id ?? "");
   const [channel, setChannel] = useState(reel.channel ?? "");
   const [status, setStatus] = useState<ReelStatus>(reel.status);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
-  const [gravityX, setGravityX] = useState(0.5);
-  const [converting, setConverting] = useState(false);
-  const [convertError, setConvertError] = useState<string | null>(null);
-  const convertFn = useServerFn(convertReelToVertical);
-
-  const isHorizontal = dims ? dims.w / dims.h > 9 / 16 + 0.001 : false;
-  const cropFractionW = dims ? (dims.h * (9 / 16)) / dims.w : 1;
-  // position du cadre 9:16 dans la preview, en % de la largeur affichée
-  const overlayLeftPct = isHorizontal
-    ? (1 - cropFractionW) * gravityX * 100
-    : 0;
-  const overlayWidthPct = cropFractionW * 100;
-
-  async function handleConvert() {
-    setConverting(true);
-    setConvertError(null);
-    try {
-      await convertFn({ data: { reelId: reel.id, gravityX } });
-      await onConverted();
-    } catch (e: any) {
-      setConvertError(e?.message ?? "Conversion impossible.");
-    } finally {
-      setConverting(false);
-    }
-  }
 
   return (
     <div
@@ -775,96 +745,6 @@ function EditModal({
           </select>
         </Field>
 
-        {url && (
-          <div className="space-y-3 pt-2 border-t border-border">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] opacity-70">
-              <Crop className="h-3.5 w-3.5" /> Format vidéo
-            </div>
-            <div className="relative w-full bg-black rounded-lg overflow-hidden">
-              <video
-                ref={videoRef}
-                src={url + "#t=0.5"}
-                muted
-                playsInline
-                preload="metadata"
-                onLoadedMetadata={(e) => {
-                  const v = e.currentTarget;
-                  setDims({ w: v.videoWidth, h: v.videoHeight });
-                }}
-                className="w-full h-auto block"
-              />
-              {isHorizontal && (
-                <div
-                  className="absolute top-0 bottom-0 border-2 border-primary pointer-events-none transition-all"
-                  style={{
-                    left: `${overlayLeftPct}%`,
-                    width: `${overlayWidthPct}%`,
-                    boxShadow: "0 0 0 9999px rgba(0,0,0,0.45)",
-                  }}
-                />
-              )}
-            </div>
-
-            {!dims ? (
-              <p className="text-xs opacity-60">Analyse de la vidéo…</p>
-            ) : !isHorizontal ? (
-              <p className="text-xs opacity-70">
-                <em>Cette vidéo est déjà au format vertical.</em>
-              </p>
-            ) : (
-              <>
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs opacity-70">
-                    <span>Position du cadre</span>
-                    <span>
-                      {gravityX === 0
-                        ? "Gauche"
-                        : gravityX === 1
-                          ? "Droite"
-                          : gravityX === 0.5
-                            ? "Centre"
-                            : `${Math.round(gravityX * 100)}%`}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    value={Math.round(gravityX * 100)}
-                    onChange={(e) =>
-                      setGravityX(Number(e.target.value) / 100)
-                    }
-                    className="w-full accent-primary"
-                    disabled={converting}
-                  />
-                </div>
-                {convertError && (
-                  <p className="text-xs text-destructive">{convertError}</p>
-                )}
-                <button
-                  onClick={handleConvert}
-                  disabled={converting}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm hover:opacity-90 disabled:opacity-50"
-                >
-                  {converting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Conversion en
-                      cours…
-                    </>
-                  ) : (
-                    <>
-                      <Crop className="h-4 w-4" /> Convertir en vertical (9:16)
-                    </>
-                  )}
-                </button>
-                <p className="text-[11px] opacity-60 leading-relaxed">
-                  La vidéo originale est conservée. Le traitement peut prendre
-                  quelques secondes à une minute selon la durée.
-                </p>
-              </>
-            )}
-          </div>
-        )}
 
 
         <div className="flex justify-end gap-2 pt-2">
