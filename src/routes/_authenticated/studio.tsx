@@ -333,16 +333,20 @@ function PostEditor({
   post,
   pillars,
   pillarById,
+  userId,
   onBack,
   onSave,
   onDelete,
+  onRefresh,
 }: {
   post: Post;
   pillars: Pillar[];
   pillarById: Record<string, Pillar>;
+  userId: string | null;
   onBack: () => void;
   onSave: (patch: Partial<Post>) => Promise<void>;
   onDelete: () => void;
+  onRefresh: () => void;
 }) {
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content);
@@ -353,6 +357,7 @@ function PostEditor({
     post.scheduled_at ? toLocalInput(post.scheduled_at) : "",
   );
   const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
+  const [showPublish, setShowPublish] = useState(false);
 
   async function handleSave() {
     setSaving("saving");
