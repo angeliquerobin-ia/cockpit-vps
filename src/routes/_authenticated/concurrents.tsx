@@ -156,6 +156,7 @@ function CompetitorsPage() {
         .from("competitors")
         .select("id,name,channel,handle,notes")
         .eq("user_id", uid)
+        .is("deleted_at", null)
         .order("created_at", { ascending: true }),
       supabase
         .from("competitor_metrics")
