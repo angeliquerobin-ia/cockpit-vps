@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      content_pillars: {
+        Row: {
+          channel: Database["public"]["Enums"]["pillar_channel"]
+          color: string
+          created_at: string
+          description: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["pillar_channel"]
+          color?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["pillar_channel"]
+          color?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      strategy_documents: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +79,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      pillar_channel:
+        | "linkedin"
+        | "instagram_coaching"
+        | "instagram_chroniques_cosmiques"
+        | "podcast"
+        | "substack"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +211,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      pillar_channel: [
+        "linkedin",
+        "instagram_coaching",
+        "instagram_chroniques_cosmiques",
+        "podcast",
+        "substack",
+      ],
+    },
   },
 } as const
