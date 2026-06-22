@@ -117,6 +117,7 @@ function CalendarPage() {
           .from("posts")
           .select("id,title,channel,pillar_id,scheduled_at")
           .eq("user_id", userId)
+          .is("deleted_at", null)
           .not("scheduled_at", "is", null),
       ]);
       setPillars((p.data ?? []) as Pillar[]);
