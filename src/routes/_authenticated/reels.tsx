@@ -519,6 +519,16 @@ function ReelCard({
           <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-foreground/80">
             {statusLabel(reel.status)}
           </span>
+          {hasSubtitled && (
+            <a
+              href={reel.subtitled_video_url ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary inline-flex items-center gap-1"
+            >
+              <Captions className="h-3 w-3" /> Vidéo sous-titrée
+            </a>
+          )}
         </div>
         <div className="flex justify-end items-center gap-1 pt-1 relative">
           {hasTranscription && (
