@@ -156,6 +156,7 @@ function ReglagesPage() {
           webhook_publish: s.webhook_publish ?? "",
           webhook_stats: s.webhook_stats ?? "",
           webhook_competitors: s.webhook_competitors ?? "",
+          webhook_competitors_content: s.webhook_competitors_content ?? "",
           webhook_transcription: s.webhook_transcription ?? "",
           webhook_subtitles: s.webhook_subtitles ?? "",
         });
