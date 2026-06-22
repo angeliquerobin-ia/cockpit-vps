@@ -1,0 +1,1 @@
+ALTER TABLE public.reels ADD COLUMN IF NOT EXISTS subtitled_video_url text;
