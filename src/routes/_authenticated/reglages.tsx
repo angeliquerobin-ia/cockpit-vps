@@ -513,6 +513,7 @@ function ReglagesPage() {
                     <Save className="h-3.5 w-3.5" />
                   </button>
                 </div>
+                {w.key === "webhook_stats" && <StatsWebhookHelp />}
               </div>
             );
           })}
