@@ -480,6 +480,13 @@ function PostEditor({
         </div>
       </div>
 
+      {deriveError && (
+        <p className="text-sm text-destructive rounded-lg bg-destructive/10 px-3 py-2">
+          {deriveError}
+        </p>
+      )}
+
+
       {showPublish && userId && (
         <PublishDialog
           post={{
