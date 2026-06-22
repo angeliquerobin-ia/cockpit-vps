@@ -451,6 +451,8 @@ function ReelCard({
   onDelete,
   onTransformIdea,
   onTransformPost,
+  onSubtitle,
+  subtitling,
 }: {
   reel: Reel;
   url?: string;
@@ -460,9 +462,12 @@ function ReelCard({
   onDelete: () => void;
   onTransformIdea: () => void;
   onTransformPost: () => void;
+  onSubtitle: () => void;
+  subtitling: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const hasTranscription = !!reel.transcription?.trim();
+  const hasSubtitled = !!reel.subtitled_video_url;
   return (
     <article className="bg-card rounded-2xl shadow-[var(--shadow-soft)] overflow-hidden group">
       <button
