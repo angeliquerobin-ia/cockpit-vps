@@ -10,7 +10,6 @@ import {
   Play,
   X,
   Pencil,
-  Crop,
   Loader2,
   Wand2,
   Lightbulb,
@@ -18,7 +17,6 @@ import {
   Captions,
 } from "lucide-react";
 import { CHANNEL_LABELS, ALL_CHANNELS } from "@/lib/channel-prompts";
-import { convertReelToVertical } from "@/lib/cloudinary.functions";
 import { subtitleReel } from "@/lib/reels.functions";
 
 type Pillar = { id: string; name: string; color: string };
