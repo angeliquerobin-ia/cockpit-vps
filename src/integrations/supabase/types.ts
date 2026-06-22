@@ -180,6 +180,7 @@ export type Database = {
           channel: Database["public"]["Enums"]["pillar_channel"] | null
           created_at: string
           id: string
+          original_video_path: string | null
           pillar_id: string | null
           status: Database["public"]["Enums"]["reel_status"]
           subtitles: string
@@ -193,6 +194,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
           created_at?: string
           id?: string
+          original_video_path?: string | null
           pillar_id?: string | null
           status?: Database["public"]["Enums"]["reel_status"]
           subtitles?: string
@@ -206,6 +208,7 @@ export type Database = {
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
           created_at?: string
           id?: string
+          original_video_path?: string | null
           pillar_id?: string | null
           status?: Database["public"]["Enums"]["reel_status"]
           subtitles?: string

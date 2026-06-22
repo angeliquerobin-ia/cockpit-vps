@@ -1,0 +1,1 @@
+ALTER TABLE public.reels ADD COLUMN IF NOT EXISTS original_video_path text;
