@@ -352,11 +352,7 @@ function IdeaCard({
       <div className="pt-2 pl-6">
         <button
           type="button"
-          onClick={() =>
-            alert(
-              "Le Studio de rédaction arrive à la prochaine étape. Le lien sera branché à ce moment-là.",
-            )
-          }
+          onClick={onTransform}
           className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
         >
           Transformer en post <ArrowRight className="h-3.5 w-3.5" />
