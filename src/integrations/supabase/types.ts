@@ -41,6 +41,68 @@ export type Database = {
         }
         Relationships: []
       }
+      competitor_metrics: {
+        Row: {
+          competitor_id: string
+          fetched_at: string
+          metrics: Json
+          user_id: string
+        }
+        Insert: {
+          competitor_id: string
+          fetched_at?: string
+          metrics?: Json
+          user_id: string
+        }
+        Update: {
+          competitor_id?: string
+          fetched_at?: string
+          metrics?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_metrics_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: true
+            referencedRelation: "competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      competitors: {
+        Row: {
+          channel: string
+          created_at: string
+          handle: string
+          id: string
+          name: string
+          notes: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          handle: string
+          id?: string
+          name: string
+          notes?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          handle?: string
+          id?: string
+          name?: string
+          notes?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_pillars: {
         Row: {
           channel: Database["public"]["Enums"]["pillar_channel"]
@@ -254,6 +316,24 @@ export type Database = {
           created_at?: string
           id?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_metrics_snapshot: {
+        Row: {
+          fetched_at: string
+          metrics: Json
+          user_id: string
+        }
+        Insert: {
+          fetched_at?: string
+          metrics?: Json
+          user_id: string
+        }
+        Update: {
+          fetched_at?: string
+          metrics?: Json
           user_id?: string
         }
         Relationships: []
