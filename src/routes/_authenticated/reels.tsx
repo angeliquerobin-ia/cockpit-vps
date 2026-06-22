@@ -170,7 +170,7 @@ function ReelsPage() {
     setReels((prev) =>
       prev.map((r) => (r.id === id ? { ...r, ...rest } : r)),
     );
-    await supabase.from("reels").update(rest).eq("id", id);
+    await supabase.from("reels").update(rest as any).eq("id", id);
   }
 
   const filtered = reels.filter((r) => {
