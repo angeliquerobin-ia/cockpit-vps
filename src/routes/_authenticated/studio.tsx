@@ -473,22 +473,16 @@ function PostEditor({
           </div>
         </div>
 
-        {/* Assistant panel (placeholder) */}
-        <aside className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-5 space-y-4 h-fit lg:sticky lg:top-6">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <h2 className="text-xl">Assistant</h2>
-          </div>
-          <p className="text-xs uppercase tracking-[0.15em] opacity-60">Bientôt</p>
-          <div className="rounded-xl border border-dashed border-border p-6 text-center">
-            <p className="text-sm opacity-70 leading-relaxed">
-              <em>
-                Votre agent de rédaction arrivera ici à la prochaine étape pour vous
-                aider à reformuler, condenser et trouver le ton juste.
-              </em>
-            </p>
-          </div>
-        </aside>
+        <AssistantPanel
+          channel={(channel || null) as Channel | null}
+          pillarId={pillarId || null}
+          currentContent={content}
+          onInsert={(text) =>
+            setContent((prev) =>
+              prev.trim() ? prev.trimEnd() + "\n\n" + text : text,
+            )
+          }
+        />
       </div>
     </div>
   );
