@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { aiSuggestIdeas } from "@/lib/ai-writer.functions";
 import {
   Plus,
   Pencil,
@@ -9,6 +11,7 @@ import {
   Check,
   X,
   Filter,
+  Sparkles,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/idees")({
