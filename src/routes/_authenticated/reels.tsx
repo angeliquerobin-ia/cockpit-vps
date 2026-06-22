@@ -171,9 +171,8 @@ function ReelsPage() {
   }
 
   async function removeReel(reel: Reel) {
-    if (!confirm("Supprimer ce réel ? La vidéo sera supprimée du stockage.")) return;
-    await supabase.storage.from("reels").remove([reel.video_path]);
-    await supabase.from("reels").delete().eq("id", reel.id);
+    if (!confirm("Mettre ce réel à la corbeille ?")) return;
+    await supabase.from("reels").update({ deleted_at: new Date().toISOString() } as any).eq("id", reel.id);
     setReels((prev) => prev.filter((r) => r.id !== reel.id));
   }
 
