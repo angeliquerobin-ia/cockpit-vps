@@ -79,7 +79,7 @@ function ReelsPage() {
         .order("created_at"),
       supabase
         .from("reels")
-        .select("id,title,pillar_id,channel,status,video_path,created_at")
+        .select("id,title,pillar_id,channel,status,video_path,transcription,created_at")
         .eq("user_id", uid)
         .order("created_at", { ascending: false }),
     ]);
