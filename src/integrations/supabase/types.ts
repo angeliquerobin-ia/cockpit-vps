@@ -191,6 +191,7 @@ export type Database = {
           pillar_id: string | null
           published_at: string | null
           scheduled_at: string | null
+          source_post_id: string | null
           status: Database["public"]["Enums"]["post_status"]
           title: string
           updated_at: string
@@ -206,6 +207,7 @@ export type Database = {
           pillar_id?: string | null
           published_at?: string | null
           scheduled_at?: string | null
+          source_post_id?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           title?: string
           updated_at?: string
@@ -221,6 +223,7 @@ export type Database = {
           pillar_id?: string | null
           published_at?: string | null
           scheduled_at?: string | null
+          source_post_id?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           title?: string
           updated_at?: string
@@ -239,6 +242,13 @@ export type Database = {
             columns: ["pillar_id"]
             isOneToOne: false
             referencedRelation: "content_pillars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_source_post_id_fkey"
+            columns: ["source_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
         ]

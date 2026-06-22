@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Plus,
@@ -10,8 +11,11 @@ import {
   Save,
   ArrowLeft,
   Send,
+  Shuffle,
+  Loader2,
 } from "lucide-react";
 import { PublishDialog } from "@/components/publish-dialog";
+import { aiDeriveForChannel } from "@/lib/ai-writer.functions";
 
 type Channel =
   | "linkedin"
@@ -358,6 +362,27 @@ function PostEditor({
   );
   const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
   const [showPublish, setShowPublish] = useState(false);
+  const [deriveOpen, setDeriveOpen] = useState(false);
+  const [deriving, setDeriving] = useState<string | null>(null);
+  const [deriveError, setDeriveError] = useState<string | null>(null);
+  const derive = useServerFn(aiDeriveForChannel);
+  const navigate = useNavigate();
+
+  async function handleDerive(target: string) {
+    setDeriveError(null);
+    setDeriving(target);
+    try {
+      await onSave({ title, content, channel: (channel || null) as Channel | null, pillar_id: pillarId || null, status, scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null });
+      const r = await derive({ data: { sourcePostId: post.id, targetChannel: target } });
+      onRefresh();
+      setDeriveOpen(false);
+      navigate({ to: "/studio", search: { post: r.postId } });
+    } catch (e: any) {
+      setDeriveError(e?.message ?? "Déclinaison impossible.");
+    } finally {
+      setDeriving(null);
+    }
+  }
 
   async function handleSave() {
     setSaving("saving");
@@ -389,6 +414,48 @@ function PostEditor({
             {saving === "saving" && "Enregistrement…"}
             {saving === "saved" && <em>Enregistré</em>}
           </span>
+          <div className="relative">
+            <button
+              onClick={() => setDeriveOpen((v) => !v)}
+              disabled={!!deriving}
+              className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted text-foreground/80 transition-colors disabled:opacity-50"
+            >
+              {deriving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Shuffle className="h-4 w-4" />
+              )}
+              Décliner sur un autre canal
+            </button>
+            {deriveOpen && !deriving && (
+              <>
+                <button
+                  className="fixed inset-0 z-10 cursor-default"
+                  onClick={() => setDeriveOpen(false)}
+                  aria-label="Fermer"
+                />
+                <div className="absolute right-0 top-full mt-1 z-20 w-64 rounded-lg bg-popover border border-border shadow-[var(--shadow-soft)] py-1">
+                  <p className="px-3 py-1.5 text-[11px] uppercase tracking-[0.15em] opacity-60">
+                    Choisir un canal cible
+                  </p>
+                  {CHANNELS.filter((c) => c.value !== channel).map((c) => (
+                    <button
+                      key={c.value}
+                      onClick={() => handleDerive(c.value)}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted"
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                  {CHANNELS.filter((c) => c.value !== channel).length === 0 && (
+                    <p className="px-3 py-2 text-xs opacity-60">
+                      Aucun autre canal disponible.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
           <button
             onClick={onDelete}
             className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted text-foreground/70 transition-colors"
@@ -412,6 +479,13 @@ function PostEditor({
           </button>
         </div>
       </div>
+
+      {deriveError && (
+        <p className="text-sm text-destructive rounded-lg bg-destructive/10 px-3 py-2">
+          {deriveError}
+        </p>
+      )}
+
 
       {showPublish && userId && (
         <PublishDialog
