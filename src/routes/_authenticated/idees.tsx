@@ -138,6 +138,60 @@ function IdeasPage() {
     await supabase.from("ideas").delete().eq("id", id);
   }
 
+  async function runSuggest() {
+    setSuggesting(true);
+    setSuggestError(null);
+    try {
+      const res = await suggestIdeasFn({
+        data: { count: 8, hint: suggestHint.trim() },
+      });
+      const list = (res.ideas ?? []).map((s, idx) => ({
+        key: `${Date.now()}-${idx}`,
+        title: s.title,
+        angle: s.angle,
+        pillar_id: s.pillar_id,
+        channel: s.channel as Channel | null,
+      }));
+      setSuggestions(list);
+    } catch (e: any) {
+      setSuggestError(e?.message ?? "Erreur lors de la génération");
+    } finally {
+      setSuggesting(false);
+    }
+  }
+
+  async function addSuggestion(s: Suggestion) {
+    if (!userId) return;
+    const { data } = await supabase
+      .from("ideas")
+      .insert({
+        user_id: userId,
+        title: s.title,
+        note: s.angle,
+        pillar_id: s.pillar_id,
+        channel: s.channel,
+      })
+      .select("id,title,note,pillar_id,channel,status,created_at")
+      .single();
+    if (data) {
+      setIdeas((prev) => [data as Idea, ...prev]);
+      setSuggestions((prev) =>
+        prev.map((x) => (x.key === s.key ? { ...x, added: true } : x)),
+      );
+    }
+  }
+
+  function updateSuggestion(key: string, patch: Partial<Suggestion>) {
+    setSuggestions((prev) =>
+      prev.map((s) => (s.key === key ? { ...s, ...patch } : s)),
+    );
+  }
+
+  function dismissSuggestion(key: string) {
+    setSuggestions((prev) => prev.filter((s) => s.key !== key));
+  }
+
+
   async function transformToPost(idea: Idea) {
     if (!userId) return;
     const { data } = await supabase
