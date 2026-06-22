@@ -362,6 +362,27 @@ function PostEditor({
   );
   const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
   const [showPublish, setShowPublish] = useState(false);
+  const [deriveOpen, setDeriveOpen] = useState(false);
+  const [deriving, setDeriving] = useState<string | null>(null);
+  const [deriveError, setDeriveError] = useState<string | null>(null);
+  const derive = useServerFn(aiDeriveForChannel);
+  const navigate = useNavigate();
+
+  async function handleDerive(target: string) {
+    setDeriveError(null);
+    setDeriving(target);
+    try {
+      await onSave({ title, content, channel: (channel || null) as Channel | null, pillar_id: pillarId || null, status, scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null });
+      const r = await derive({ data: { sourcePostId: post.id, targetChannel: target } });
+      onRefresh();
+      setDeriveOpen(false);
+      navigate({ to: "/studio", search: { post: r.postId } });
+    } catch (e: any) {
+      setDeriveError(e?.message ?? "Déclinaison impossible.");
+    } finally {
+      setDeriving(null);
+    }
+  }
 
   async function handleSave() {
     setSaving("saving");
