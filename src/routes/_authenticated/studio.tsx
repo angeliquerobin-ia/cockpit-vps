@@ -1,13 +1,510 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { PagePlaceholder } from "@/components/page-placeholder";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Plus,
+  Trash2,
+  Filter,
+  FileText,
+  Sparkles,
+  Save,
+  ArrowLeft,
+} from "lucide-react";
+
+type Channel =
+  | "linkedin"
+  | "instagram_coaching"
+  | "instagram_chroniques_cosmiques"
+  | "podcast"
+  | "substack";
+
+type Status = "idee" | "en_redaction" | "pret" | "programme" | "publie";
+
+type Pillar = { id: string; name: string; color: string };
+
+type Post = {
+  id: string;
+  title: string;
+  content: string;
+  channel: Channel | null;
+  pillar_id: string | null;
+  status: Status;
+  scheduled_at: string | null;
+  idea_id: string | null;
+  updated_at: string;
+};
+
+const CHANNELS: { value: Channel; label: string }[] = [
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "instagram_coaching", label: "Instagram coaching" },
+  { value: "instagram_chroniques_cosmiques", label: "Instagram Chroniques Cosmiques" },
+  { value: "podcast", label: "Podcast" },
+  { value: "substack", label: "Substack" },
+];
+
+const STATUSES: { value: Status; label: string }[] = [
+  { value: "idee", label: "Idée" },
+  { value: "en_redaction", label: "En rédaction" },
+  { value: "pret", label: "Prêt" },
+  { value: "programme", label: "Programmé" },
+  { value: "publie", label: "Publié" },
+];
+
+const channelLabel = (c: Channel | null) =>
+  c ? CHANNELS.find((x) => x.value === c)?.label : null;
+const statusLabel = (s: Status) =>
+  STATUSES.find((x) => x.value === s)?.label ?? s;
 
 export const Route = createFileRoute("/_authenticated/studio")({
   head: () => ({ meta: [{ title: "Studio de rédaction — Cockpit" }] }),
-  component: () => (
-    <PagePlaceholder
-      title="Studio de rédaction"
-      kicker="L'atelier"
-      description="Rédigez, peaufinez et mettez en forme vos contenus longs."
-    />
-  ),
+  validateSearch: (s: Record<string, unknown>) => ({
+    post: typeof s.post === "string" ? s.post : undefined,
+  }),
+  component: StudioPage,
 });
+
+function StudioPage() {
+  const navigate = useNavigate();
+  const { post: postParam } = Route.useSearch();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [pillars, setPillars] = useState<Pillar[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(postParam ?? null);
+
+  const [fPillar, setFPillar] = useState("all");
+  const [fChannel, setFChannel] = useState("all");
+  const [fStatus, setFStatus] = useState("all");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
+
+  async function loadAll(uid: string) {
+    const [p, posts] = await Promise.all([
+      supabase
+        .from("content_pillars")
+        .select("id,name,color")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("posts")
+        .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at")
+        .eq("user_id", uid)
+        .order("updated_at", { ascending: false }),
+    ]);
+    setPillars((p.data ?? []) as Pillar[]);
+    setPosts((posts.data ?? []) as Post[]);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    if (userId) loadAll(userId);
+  }, [userId]);
+
+  useEffect(() => {
+    setSelectedId(postParam ?? null);
+  }, [postParam]);
+
+  const pillarById = useMemo(
+    () => Object.fromEntries(pillars.map((p) => [p.id, p])),
+    [pillars],
+  );
+
+  async function createBlank() {
+    if (!userId) return;
+    const { data } = await supabase
+      .from("posts")
+      .insert({ user_id: userId, title: "", content: "", status: "en_redaction" })
+      .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at")
+      .single();
+    if (data) {
+      setPosts((prev) => [data as Post, ...prev]);
+      navigate({ to: "/studio", search: { post: data.id } });
+    }
+  }
+
+  async function savePost(id: string, patch: Partial<Post>) {
+    setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    await supabase.from("posts").update(patch).eq("id", id);
+  }
+
+  async function removePost(id: string) {
+    if (!confirm("Supprimer ce post ?")) return;
+    setPosts((prev) => prev.filter((p) => p.id !== id));
+    await supabase.from("posts").delete().eq("id", id);
+    if (selectedId === id) navigate({ to: "/studio", search: {} });
+  }
+
+  const filtered = posts.filter((p) => {
+    if (fPillar !== "all" && p.pillar_id !== fPillar) return false;
+    if (fChannel !== "all" && p.channel !== fChannel) return false;
+    if (fStatus !== "all" && p.status !== fStatus) return false;
+    return true;
+  });
+
+  const selected = posts.find((p) => p.id === selectedId) ?? null;
+
+  if (selected) {
+    return (
+      <PostEditor
+        key={selected.id}
+        post={selected}
+        pillars={pillars}
+        pillarById={pillarById}
+        onBack={() => navigate({ to: "/studio", search: {} })}
+        onSave={(patch) => savePost(selected.id, patch)}
+        onDelete={() => removePost(selected.id)}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-10">
+      <header className="flex items-end justify-between gap-4 flex-wrap">
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-[0.2em] opacity-60">L'atelier</p>
+          <h1 className="text-5xl">Studio de rédaction</h1>
+          <p className="text-base opacity-75 max-w-2xl">
+            <em>Rédigez, peaufinez, organisez vos posts par canal et par pilier.</em>
+          </p>
+        </div>
+        <button
+          onClick={createBlank}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm hover:opacity-90 transition-opacity"
+        >
+          <Plus className="h-4 w-4" /> Nouveau post
+        </button>
+      </header>
+
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.15em] opacity-70">
+          <Filter className="h-3.5 w-3.5" /> Filtrer
+        </span>
+        <FilterSelect
+          value={fStatus}
+          onChange={setFStatus}
+          options={[
+            { value: "all", label: "Tous les statuts" },
+            ...STATUSES.map((s) => ({ value: s.value, label: s.label })),
+          ]}
+        />
+        <FilterSelect
+          value={fChannel}
+          onChange={setFChannel}
+          options={[
+            { value: "all", label: "Tous les canaux" },
+            ...CHANNELS.map((c) => ({ value: c.value, label: c.label })),
+          ]}
+        />
+        <FilterSelect
+          value={fPillar}
+          onChange={setFPillar}
+          options={[
+            { value: "all", label: "Tous les piliers" },
+            ...pillars.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+        />
+      </div>
+
+      {loading ? (
+        <p className="text-sm opacity-60">Chargement…</p>
+      ) : filtered.length === 0 ? (
+        <div className="bg-card rounded-2xl p-12 shadow-[var(--shadow-soft)] text-center space-y-3">
+          <FileText className="h-8 w-8 mx-auto opacity-40" />
+          <p className="text-sm opacity-70">
+            {posts.length === 0
+              ? "Aucun post pour l'instant. Créez votre premier post pour commencer à écrire."
+              : "Aucun post ne correspond à ces filtres."}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filtered.map((p) => (
+            <PostCard
+              key={p.id}
+              post={p}
+              pillar={p.pillar_id ? pillarById[p.pillar_id] : undefined}
+              onOpen={() => navigate({ to: "/studio", search: { post: p.id } })}
+              onDelete={() => removePost(p.id)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilterSelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="rounded-lg bg-card border border-border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function PostCard({
+  post,
+  pillar,
+  onOpen,
+  onDelete,
+}: {
+  post: Post;
+  pillar?: Pillar;
+  onOpen: () => void;
+  onDelete: () => void;
+}) {
+  const preview = post.content.trim().slice(0, 140);
+  return (
+    <article className="bg-card rounded-2xl shadow-[var(--shadow-soft)] overflow-hidden group">
+      <div className="h-1.5" style={{ backgroundColor: pillar?.color ?? "#cdb48e" }} />
+      <button
+        onClick={onOpen}
+        className="w-full text-left p-5 space-y-3"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-xl leading-snug flex-1">
+            {post.title.trim() || <span className="opacity-50">Sans titre</span>}
+          </h3>
+        </div>
+        {preview && (
+          <p className="text-sm opacity-70 leading-relaxed line-clamp-2">{preview}</p>
+        )}
+        <div className="flex items-center gap-2 flex-wrap pt-1">
+          {pillar && (
+            <span
+              className="inline-block text-xs px-2.5 py-1 rounded-full"
+              style={{ backgroundColor: pillar.color + "33", color: pillar.color }}
+            >
+              {pillar.name}
+            </span>
+          )}
+          {post.channel && (
+            <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-popover text-foreground/70">
+              {channelLabel(post.channel)}
+            </span>
+          )}
+          <StatusChip status={post.status} />
+        </div>
+      </button>
+      <div className="px-5 pb-4 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={onDelete}
+          aria-label="Supprimer"
+          className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted text-foreground/70"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function StatusChip({ status }: { status: Status }) {
+  return (
+    <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-muted text-foreground/80">
+      {statusLabel(status)}
+    </span>
+  );
+}
+
+function PostEditor({
+  post,
+  pillars,
+  pillarById,
+  onBack,
+  onSave,
+  onDelete,
+}: {
+  post: Post;
+  pillars: Pillar[];
+  pillarById: Record<string, Pillar>;
+  onBack: () => void;
+  onSave: (patch: Partial<Post>) => Promise<void>;
+  onDelete: () => void;
+}) {
+  const [title, setTitle] = useState(post.title);
+  const [content, setContent] = useState(post.content);
+  const [channel, setChannel] = useState<string>(post.channel ?? "");
+  const [pillarId, setPillarId] = useState<string>(post.pillar_id ?? "");
+  const [status, setStatus] = useState<Status>(post.status);
+  const [scheduledAt, setScheduledAt] = useState<string>(
+    post.scheduled_at ? toLocalInput(post.scheduled_at) : "",
+  );
+  const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
+
+  async function handleSave() {
+    setSaving("saving");
+    await onSave({
+      title,
+      content,
+      channel: (channel || null) as Channel | null,
+      pillar_id: pillarId || null,
+      status,
+      scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+    });
+    setSaving("saved");
+    setTimeout(() => setSaving("idle"), 1500);
+  }
+
+  const pillar = pillarId ? pillarById[pillarId] : undefined;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-2 text-sm opacity-75 hover:opacity-100 transition-opacity"
+        >
+          <ArrowLeft className="h-4 w-4" /> Tous les posts
+        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-xs opacity-60 mr-2">
+            {saving === "saving" && "Enregistrement…"}
+            {saving === "saved" && <em>Enregistré</em>}
+          </span>
+          <button
+            onClick={onDelete}
+            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted text-foreground/70 transition-colors"
+          >
+            <Trash2 className="h-4 w-4" /> Supprimer
+          </button>
+          <button
+            onClick={handleSave}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 transition-opacity"
+          >
+            <Save className="h-4 w-4" /> Enregistrer
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+        {/* Main editor */}
+        <div className="space-y-5">
+          <div className="bg-card rounded-2xl shadow-[var(--shadow-soft)] overflow-hidden">
+            <div
+              className="h-1.5"
+              style={{ backgroundColor: pillar?.color ?? "#cdb48e" }}
+            />
+            <div className="p-6 md:p-8 space-y-5">
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Titre du post"
+                className="w-full bg-transparent border-0 outline-none text-3xl md:text-4xl placeholder:opacity-40"
+                style={{ fontFamily: "var(--font-display, 'Cormorant Garamond', serif)" }}
+              />
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Commencez à écrire…"
+                rows={18}
+                className="w-full bg-transparent border-0 outline-none text-base leading-relaxed resize-none placeholder:opacity-40"
+              />
+            </div>
+          </div>
+
+          <div className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Canal">
+              <select
+                value={channel}
+                onChange={(e) => setChannel(e.target.value)}
+                className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">— Choisir —</option>
+                {CHANNELS.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Pilier">
+              <select
+                value={pillarId}
+                onChange={(e) => setPillarId(e.target.value)}
+                className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="">— Choisir —</option>
+                {pillars.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Statut">
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as Status)}
+                className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Date de programmation">
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </Field>
+          </div>
+        </div>
+
+        {/* Assistant panel (placeholder) */}
+        <aside className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-5 space-y-4 h-fit lg:sticky lg:top-6">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h2 className="text-xl">Assistant</h2>
+          </div>
+          <p className="text-xs uppercase tracking-[0.15em] opacity-60">Bientôt</p>
+          <div className="rounded-xl border border-dashed border-border p-6 text-center">
+            <p className="text-sm opacity-70 leading-relaxed">
+              <em>
+                Votre agent de rédaction arrivera ici à la prochaine étape pour vous
+                aider à reformuler, condenser et trouver le ton juste.
+              </em>
+            </p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="space-y-1.5 block">
+      <span className="text-xs uppercase tracking-[0.15em] opacity-70">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function toLocalInput(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
