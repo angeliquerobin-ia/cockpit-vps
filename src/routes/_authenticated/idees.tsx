@@ -291,7 +291,7 @@ function IdeasPage() {
         user_id: userId,
         name: newColName.trim(),
         color: newColColor,
-      })
+      } as any)
       .select("id,name,color")
       .single();
     if (data) {
