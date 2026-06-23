@@ -699,6 +699,26 @@ function IdeasPage() {
             ...STATUSES.map((s) => ({ value: s.value, label: s.label })),
           ]}
         />
+        <label className="inline-flex items-center gap-2 rounded-lg bg-background border border-input px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-ring">
+          <Search className="h-3.5 w-3.5 opacity-60" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher par mot-clé…"
+            className="bg-transparent outline-none w-48 placeholder:opacity-50"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="Effacer la recherche"
+              className="opacity-60 hover:opacity-100"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </label>
       </div>
 
       {/* Kanban */}
