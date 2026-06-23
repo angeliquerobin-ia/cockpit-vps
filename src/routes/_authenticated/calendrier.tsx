@@ -9,6 +9,7 @@ import {
   X,
   Send,
   Pencil,
+  Film,
 } from "lucide-react";
 import { PublishDialog } from "@/components/publish-dialog";
 
