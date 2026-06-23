@@ -77,6 +77,7 @@ function IdeasPage() {
   const navigate = useNavigate();
   const suggestIdeasFn = useServerFn(aiSuggestIdeas);
   const splitIdeasFn = useServerFn(aiSplitIdeas);
+  const ocrImagesFn = useServerFn(aiOcrImages);
   const [userId, setUserId] = useState<string | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -89,6 +90,7 @@ function IdeasPage() {
   const [bulkText, setBulkText] = useState("");
   const [splitting, setSplitting] = useState(false);
   const [splitError, setSplitError] = useState<string | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
 
   // AI suggestions
   type Suggestion = {
