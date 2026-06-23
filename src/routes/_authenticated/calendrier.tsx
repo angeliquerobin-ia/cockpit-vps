@@ -349,6 +349,13 @@ function CalendarPage() {
                               {CHANNEL_INITIAL[p.channel]}
                             </span>
                           )}
+                          {p.video_url && (
+                            <Film
+                              className="h-3 w-3 shrink-0 opacity-80"
+                              style={{ color }}
+                              aria-label="Post vidéo"
+                            />
+                          )}
                           <span className="truncate">
                             {p.title.trim() || (
                               <em className="opacity-60">Sans titre</em>
