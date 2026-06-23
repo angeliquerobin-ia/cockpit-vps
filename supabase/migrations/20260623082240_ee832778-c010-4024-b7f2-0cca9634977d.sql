@@ -1,0 +1,1 @@
+ALTER TABLE public.posts ADD COLUMN video_url TEXT, ADD COLUMN source_reel_id UUID REFERENCES public.reels(id) ON DELETE SET NULL;

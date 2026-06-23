@@ -199,10 +199,12 @@ export type Database = {
           published_at: string | null
           scheduled_at: string | null
           source_post_id: string | null
+          source_reel_id: string | null
           status: Database["public"]["Enums"]["post_status"]
           title: string
           updated_at: string
           user_id: string
+          video_url: string | null
         }
         Insert: {
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
@@ -216,10 +218,12 @@ export type Database = {
           published_at?: string | null
           scheduled_at?: string | null
           source_post_id?: string | null
+          source_reel_id?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           title?: string
           updated_at?: string
           user_id: string
+          video_url?: string | null
         }
         Update: {
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
@@ -233,10 +237,12 @@ export type Database = {
           published_at?: string | null
           scheduled_at?: string | null
           source_post_id?: string | null
+          source_reel_id?: string | null
           status?: Database["public"]["Enums"]["post_status"]
           title?: string
           updated_at?: string
           user_id?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -258,6 +264,13 @@ export type Database = {
             columns: ["source_post_id"]
             isOneToOne: false
             referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_source_reel_id_fkey"
+            columns: ["source_reel_id"]
+            isOneToOne: false
+            referencedRelation: "reels"
             referencedColumns: ["id"]
           },
         ]
