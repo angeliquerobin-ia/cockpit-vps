@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { aiSuggestIdeas, aiSplitIdeas } from "@/lib/ai-writer.functions";
+import { aiSuggestIdeas, aiSplitIdeas, aiOcrImages } from "@/lib/ai-writer.functions";
 import {
   Plus,
   Pencil,
@@ -14,6 +14,7 @@ import {
   Sparkles,
   Scissors,
   GripVertical,
+  ImagePlus,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/idees")({
