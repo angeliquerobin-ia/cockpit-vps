@@ -15,6 +15,7 @@ import {
   Lightbulb,
   PenLine,
   Captions,
+  CalendarPlus,
 } from "lucide-react";
 import { CHANNEL_LABELS, ALL_CHANNELS } from "@/lib/channel-prompts";
 import { subtitleReel } from "@/lib/reels.functions";
