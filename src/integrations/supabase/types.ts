@@ -108,30 +108,30 @@ export type Database = {
       }
       content_pillars: {
         Row: {
-          channel: Database["public"]["Enums"]["pillar_channel"]
+          channel: Database["public"]["Enums"]["pillar_channel"] | null
           color: string
           created_at: string
-          description: string
+          description: string | null
           id: string
           name: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          channel: Database["public"]["Enums"]["pillar_channel"]
+          channel?: Database["public"]["Enums"]["pillar_channel"] | null
           color?: string
           created_at?: string
-          description?: string
+          description?: string | null
           id?: string
           name: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          channel?: Database["public"]["Enums"]["pillar_channel"]
+          channel?: Database["public"]["Enums"]["pillar_channel"] | null
           color?: string
           created_at?: string
-          description?: string
+          description?: string | null
           id?: string
           name?: string
           updated_at?: string
