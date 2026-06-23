@@ -345,7 +345,43 @@ function IdeasPage() {
     setAddingCol(false);
   }
 
-  async function moveIdeaTo(ideaId: string, pillarId: string | null) {
+  async function renamePillar(id: string, name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setPillars((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, name: trimmed } : p)),
+    );
+    setEditingColId(null);
+    await supabase
+      .from("content_pillars")
+      .update({ name: trimmed })
+      .eq("id", id);
+  }
+
+  async function recolorPillar(id: string, color: string) {
+    setPillars((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, color } : p)),
+    );
+    await supabase.from("content_pillars").update({ color }).eq("id", id);
+  }
+
+  async function deletePillar(id: string) {
+    const count = ideas.filter((i) => i.pillar_id === id).length;
+    const msg = count
+      ? `Supprimer ce pilier ? Les ${count} idée(s) associée(s) seront déplacées vers « Sans pilier ».`
+      : "Supprimer ce pilier ?";
+    if (!confirm(msg)) return;
+    setIdeas((prev) =>
+      prev.map((i) => (i.pillar_id === id ? { ...i, pillar_id: null } : i)),
+    );
+    setPillars((prev) => prev.filter((p) => p.id !== id));
+    await supabase
+      .from("ideas")
+      .update({ pillar_id: null })
+      .eq("pillar_id", id);
+    await supabase.from("content_pillars").delete().eq("id", id);
+  }
+
     const current = ideas.find((i) => i.id === ideaId);
     if (!current || current.pillar_id === pillarId) return;
     await updateIdea(ideaId, { pillar_id: pillarId });
