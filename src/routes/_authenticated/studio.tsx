@@ -521,6 +521,22 @@ function PostEditor({
               style={{ backgroundColor: pillar?.color ?? "#cdb48e" }}
             />
             <div className="p-6 md:p-8 space-y-5">
+              {post.video_url && (
+                <div className="rounded-xl overflow-hidden bg-muted/40 border border-border">
+                  <video
+                    src={post.video_url}
+                    controls
+                    playsInline
+                    className="w-full max-h-[420px] object-contain bg-black"
+                  />
+                  <p className="px-3 py-2 text-[11px] opacity-65">
+                    <em>
+                      Post vidéo — la légende ci-dessous accompagnera cette
+                      vidéo lors de la publication.
+                    </em>
+                  </p>
+                </div>
+              )}
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
