@@ -39,6 +39,7 @@ type Post = {
   scheduled_at: string | null;
   idea_id: string | null;
   updated_at: string;
+  video_url: string | null;
 };
 
 const CHANNELS: { value: Channel; label: string }[] = [
