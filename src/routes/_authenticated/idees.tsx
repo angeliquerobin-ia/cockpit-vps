@@ -15,6 +15,7 @@ import {
   Scissors,
   GripVertical,
   ImagePlus,
+  Search,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/idees")({
@@ -110,6 +111,11 @@ function IdeasPage() {
   // filters (sur le kanban)
   const [fChannel, setFChannel] = useState<string>("all");
   const [fStatus, setFStatus] = useState<string>("all");
+  const [search, setSearch] = useState("");
+
+  // édition d'une colonne (pilier)
+  const [editingColId, setEditingColId] = useState<string | null>(null);
+  const [editingColName, setEditingColName] = useState("");
 
   // DnD
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -340,6 +346,43 @@ function IdeasPage() {
     setAddingCol(false);
   }
 
+  async function renamePillar(id: string, name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setPillars((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, name: trimmed } : p)),
+    );
+    setEditingColId(null);
+    await supabase
+      .from("content_pillars")
+      .update({ name: trimmed })
+      .eq("id", id);
+  }
+
+  async function recolorPillar(id: string, color: string) {
+    setPillars((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, color } : p)),
+    );
+    await supabase.from("content_pillars").update({ color }).eq("id", id);
+  }
+
+  async function deletePillar(id: string) {
+    const count = ideas.filter((i) => i.pillar_id === id).length;
+    const msg = count
+      ? `Supprimer ce pilier ? Les ${count} idée(s) associée(s) seront déplacées vers « Sans pilier ».`
+      : "Supprimer ce pilier ?";
+    if (!confirm(msg)) return;
+    setIdeas((prev) =>
+      prev.map((i) => (i.pillar_id === id ? { ...i, pillar_id: null } : i)),
+    );
+    setPillars((prev) => prev.filter((p) => p.id !== id));
+    await supabase
+      .from("ideas")
+      .update({ pillar_id: null })
+      .eq("pillar_id", id);
+    await supabase.from("content_pillars").delete().eq("id", id);
+  }
+
   async function moveIdeaTo(ideaId: string, pillarId: string | null) {
     const current = ideas.find((i) => i.id === ideaId);
     if (!current || current.pillar_id === pillarId) return;
@@ -371,15 +414,18 @@ function IdeasPage() {
     [pillars],
   );
 
-  const filteredIdeas = useMemo(
-    () =>
-      ideas.filter((i) => {
-        if (fChannel !== "all" && i.channel !== fChannel) return false;
-        if (fStatus !== "all" && i.status !== fStatus) return false;
-        return true;
-      }),
-    [ideas, fChannel, fStatus],
-  );
+  const filteredIdeas = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return ideas.filter((i) => {
+      if (fChannel !== "all" && i.channel !== fChannel) return false;
+      if (fStatus !== "all" && i.status !== fStatus) return false;
+      if (q) {
+        const hay = `${i.title} ${i.note ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [ideas, fChannel, fStatus, search]);
 
   const columns: { id: string | null; name: string; color: string }[] = [
     ...pillars.map((p) => ({ id: p.id, name: p.name, color: p.color })),
@@ -653,6 +699,26 @@ function IdeasPage() {
             ...STATUSES.map((s) => ({ value: s.value, label: s.label })),
           ]}
         />
+        <label className="inline-flex items-center gap-2 rounded-lg bg-background border border-input px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-ring">
+          <Search className="h-3.5 w-3.5 opacity-60" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher par mot-clé…"
+            className="bg-transparent outline-none w-48 placeholder:opacity-50"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="Effacer la recherche"
+              className="opacity-60 hover:opacity-100"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </label>
       </div>
 
       {/* Kanban */}
@@ -675,16 +741,64 @@ function IdeasPage() {
                     isOver ? "bg-muted/80" : "bg-card/60"
                   } shadow-[var(--shadow-soft)]`}
                 >
-                  <div className="flex items-center gap-2 px-2 pb-3">
-                    <span
-                      className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: col.color }}
-                      aria-hidden
-                    />
-                    <h3 className="text-base flex-1 truncate">{col.name}</h3>
+                  <div className="flex items-center gap-2 px-2 pb-3 group">
+                    {col.id ? (
+                      <input
+                        type="color"
+                        value={col.color}
+                        onChange={(e) => recolorPillar(col.id!, e.target.value)}
+                        aria-label="Couleur du pilier"
+                        className="h-3 w-3 rounded-full border-0 p-0 bg-transparent cursor-pointer appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0"
+                        style={{ backgroundColor: col.color }}
+                      />
+                    ) : (
+                      <span
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: col.color }}
+                        aria-hidden
+                      />
+                    )}
+                    {col.id && editingColId === col.id ? (
+                      <input
+                        autoFocus
+                        value={editingColName}
+                        onChange={(e) => setEditingColName(e.target.value)}
+                        onBlur={() => renamePillar(col.id!, editingColName)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") renamePillar(col.id!, editingColName);
+                          if (e.key === "Escape") setEditingColId(null);
+                        }}
+                        className="flex-1 min-w-0 rounded-md bg-background border border-input px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    ) : (
+                      <h3 className="text-base flex-1 truncate">{col.name}</h3>
+                    )}
                     <span className="text-xs opacity-60 tabular-nums">
                       {list.length}
                     </span>
+                    {col.id && editingColId !== col.id && (
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingColId(col.id);
+                            setEditingColName(col.name);
+                          }}
+                          aria-label="Renommer le pilier"
+                          className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-muted"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deletePillar(col.id!)}
+                          aria-label="Supprimer le pilier"
+                          className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-destructive/10 text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2 min-h-[60px]">
