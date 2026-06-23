@@ -492,6 +492,8 @@ function ReelCard({
   onTransformPost,
   onSubtitle,
   subtitling,
+  onSchedule,
+  scheduling,
 }: {
   reel: Reel;
   url?: string;
@@ -503,6 +505,8 @@ function ReelCard({
   onTransformPost: () => void;
   onSubtitle: () => void;
   subtitling: boolean;
+  onSchedule: () => void;
+  scheduling: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const hasTranscription = !!reel.transcription?.trim();
