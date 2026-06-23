@@ -226,6 +226,7 @@ function ReelsPage() {
 
   const subtitleFn = useServerFn(subtitleReel);
   const [subtitling, setSubtitling] = useState<string | null>(null);
+  const [scheduling, setScheduling] = useState<string | null>(null);
 
   async function generateSubtitles(reel: Reel) {
     if (!userId || subtitling) return;
@@ -256,6 +257,48 @@ function ReelsPage() {
       setSubtitling(null);
     }
   }
+
+  async function scheduleReelAsPost(reel: Reel) {
+    if (!userId || scheduling) return;
+    setError(null);
+    setScheduling(reel.id);
+    try {
+      // URL de la vidéo : on privilégie la version sous-titrée si elle existe,
+      // sinon on signe l'originale pour 7 jours (re-signée au moment de publier).
+      let videoUrl: string | null = reel.subtitled_video_url ?? null;
+      if (!videoUrl) {
+        const { data: signed, error: sErr } = await supabase.storage
+          .from("reels")
+          .createSignedUrl(reel.video_path, 60 * 60 * 24 * 7);
+        if (sErr || !signed?.signedUrl)
+          throw new Error("Impossible de préparer la vidéo.");
+        videoUrl = signed.signedUrl;
+      }
+
+      const { data, error } = await supabase
+        .from("posts")
+        .insert({
+          user_id: userId,
+          title: reel.title.trim() || "Réel à programmer",
+          content: reel.transcription ?? "",
+          channel: reel.channel as any,
+          pillar_id: reel.pillar_id,
+          status: "en_redaction",
+          video_url: videoUrl,
+          source_reel_id: reel.id,
+        } as any)
+        .select("id")
+        .single();
+      if (error || !data)
+        throw new Error(error?.message ?? "Création du post impossible.");
+      navigate({ to: "/studio", search: { post: data.id } });
+    } catch (e: any) {
+      setError(e?.message ?? "Programmation impossible.");
+    } finally {
+      setScheduling(null);
+    }
+  }
+
 
 
   const filtered = reels.filter((r) => {
