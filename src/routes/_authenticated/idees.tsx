@@ -110,6 +110,11 @@ function IdeasPage() {
   // filters (sur le kanban)
   const [fChannel, setFChannel] = useState<string>("all");
   const [fStatus, setFStatus] = useState<string>("all");
+  const [search, setSearch] = useState("");
+
+  // édition d'une colonne (pilier)
+  const [editingColId, setEditingColId] = useState<string | null>(null);
+  const [editingColName, setEditingColName] = useState("");
 
   // DnD
   const [draggedId, setDraggedId] = useState<string | null>(null);
