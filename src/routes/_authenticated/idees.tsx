@@ -382,6 +382,7 @@ function IdeasPage() {
     await supabase.from("content_pillars").delete().eq("id", id);
   }
 
+  async function moveIdeaTo(ideaId: string, pillarId: string | null) {
     const current = ideas.find((i) => i.id === ideaId);
     if (!current || current.pillar_id === pillarId) return;
     await updateIdea(ideaId, { pillar_id: pillarId });
