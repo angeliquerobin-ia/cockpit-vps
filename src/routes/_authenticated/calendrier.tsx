@@ -9,6 +9,7 @@ import {
   X,
   Send,
   Pencil,
+  Film,
 } from "lucide-react";
 import { PublishDialog } from "@/components/publish-dialog";
 
@@ -27,6 +28,7 @@ type Post = {
   channel: Channel | null;
   pillar_id: string | null;
   scheduled_at: string | null;
+  video_url: string | null;
 };
 
 const CHANNEL_INITIAL: Record<Channel, string> = {
@@ -94,7 +96,7 @@ function CalendarPage() {
   async function reloadPosts(uid: string) {
     const { data } = await supabase
       .from("posts")
-      .select("id,title,channel,pillar_id,scheduled_at")
+      .select("id,title,channel,pillar_id,scheduled_at,video_url")
       .eq("user_id", uid)
       .is("deleted_at", null)
       .not("scheduled_at", "is", null);
@@ -115,7 +117,7 @@ function CalendarPage() {
           .eq("user_id", userId),
         supabase
           .from("posts")
-          .select("id,title,channel,pillar_id,scheduled_at")
+          .select("id,title,channel,pillar_id,scheduled_at,video_url")
           .eq("user_id", userId)
           .is("deleted_at", null)
           .not("scheduled_at", "is", null),
@@ -346,6 +348,13 @@ function CalendarPage() {
                             >
                               {CHANNEL_INITIAL[p.channel]}
                             </span>
+                          )}
+                          {p.video_url && (
+                            <Film
+                              className="h-3 w-3 shrink-0 opacity-80"
+                              style={{ color }}
+                              aria-label="Post vidéo"
+                            />
                           )}
                           <span className="truncate">
                             {p.title.trim() || (

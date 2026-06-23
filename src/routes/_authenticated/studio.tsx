@@ -39,6 +39,7 @@ type Post = {
   scheduled_at: string | null;
   idea_id: string | null;
   updated_at: string;
+  video_url: string | null;
 };
 
 const CHANNELS: { value: Channel; label: string }[] = [
@@ -96,7 +97,7 @@ function StudioPage() {
         .order("created_at", { ascending: true }),
       supabase
         .from("posts")
-        .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at")
+        .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at,video_url")
         .eq("user_id", uid)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false }),
@@ -124,7 +125,7 @@ function StudioPage() {
     const { data } = await supabase
       .from("posts")
       .insert({ user_id: userId, title: "", content: "", status: "en_redaction" })
-      .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at")
+      .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at,video_url")
       .single();
     if (data) {
       setPosts((prev) => [data as Post, ...prev]);
@@ -520,6 +521,22 @@ function PostEditor({
               style={{ backgroundColor: pillar?.color ?? "#cdb48e" }}
             />
             <div className="p-6 md:p-8 space-y-5">
+              {post.video_url && (
+                <div className="rounded-xl overflow-hidden bg-muted/40 border border-border">
+                  <video
+                    src={post.video_url}
+                    controls
+                    playsInline
+                    className="w-full max-h-[420px] object-contain bg-black"
+                  />
+                  <p className="px-3 py-2 text-[11px] opacity-65">
+                    <em>
+                      Post vidéo — la légende ci-dessous accompagnera cette
+                      vidéo lors de la publication.
+                    </em>
+                  </p>
+                </div>
+              )}
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}

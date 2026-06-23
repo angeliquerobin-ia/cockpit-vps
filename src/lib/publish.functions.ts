@@ -64,7 +64,7 @@ export const publishPostViaN8n = createServerFn({ method: "POST" })
     const { data: post, error: pErr } = await supabase
       .from("posts")
       .select(
-        "id,user_id,title,content,channel,pillar_id,scheduled_at,status",
+        "id,user_id,title,content,channel,pillar_id,scheduled_at,status,video_url,source_reel_id",
       )
       .eq("id", data.postId)
       .maybeSingle();
@@ -73,7 +73,28 @@ export const publishPostViaN8n = createServerFn({ method: "POST" })
       throw new Error("Post introuvable.");
 
     const p = post as any;
-    if (!p.content?.trim()) throw new Error("Le contenu du post est vide.");
+
+    // Vidéo : si le post a un source_reel_id, on (re)génère une URL fraîche
+    // pour éviter qu'une URL signée expirée n'arrive à Metricool.
+    let videoUrl: string | null = p.video_url ?? null;
+    if (p.source_reel_id) {
+      const { data: reel } = await supabase
+        .from("reels")
+        .select("video_path,subtitled_video_url")
+        .eq("id", p.source_reel_id)
+        .maybeSingle();
+      const r = reel as any;
+      if (r?.subtitled_video_url) {
+        videoUrl = r.subtitled_video_url;
+      } else if (r?.video_path) {
+        const { data: signed } = await supabase.storage
+          .from("reels")
+          .createSignedUrl(r.video_path, 60 * 60 * 24 * 7);
+        if (signed?.signedUrl) videoUrl = signed.signedUrl;
+      }
+    }
+    if (!p.content?.trim() && !videoUrl)
+      throw new Error("Le post est vide (ni texte ni vidéo).");
 
     // 4) Détermine le moment
     let scheduledAtIso: string | null = null;
@@ -93,6 +114,8 @@ export const publishPostViaN8n = createServerFn({ method: "POST" })
         content: p.content,
         channel: data.channel,
         pillar_id: p.pillar_id,
+        video_url: videoUrl,
+        kind: videoUrl ? "video" : "text",
       },
       timing: {
         mode: data.timing, // "now" | "schedule" | "auto"

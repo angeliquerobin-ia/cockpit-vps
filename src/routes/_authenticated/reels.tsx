@@ -15,6 +15,7 @@ import {
   Lightbulb,
   PenLine,
   Captions,
+  CalendarPlus,
 } from "lucide-react";
 import { CHANNEL_LABELS, ALL_CHANNELS } from "@/lib/channel-prompts";
 import { subtitleReel } from "@/lib/reels.functions";
@@ -225,6 +226,7 @@ function ReelsPage() {
 
   const subtitleFn = useServerFn(subtitleReel);
   const [subtitling, setSubtitling] = useState<string | null>(null);
+  const [scheduling, setScheduling] = useState<string | null>(null);
 
   async function generateSubtitles(reel: Reel) {
     if (!userId || subtitling) return;
@@ -255,6 +257,48 @@ function ReelsPage() {
       setSubtitling(null);
     }
   }
+
+  async function scheduleReelAsPost(reel: Reel) {
+    if (!userId || scheduling) return;
+    setError(null);
+    setScheduling(reel.id);
+    try {
+      // URL de la vidéo : on privilégie la version sous-titrée si elle existe,
+      // sinon on signe l'originale pour 7 jours (re-signée au moment de publier).
+      let videoUrl: string | null = reel.subtitled_video_url ?? null;
+      if (!videoUrl) {
+        const { data: signed, error: sErr } = await supabase.storage
+          .from("reels")
+          .createSignedUrl(reel.video_path, 60 * 60 * 24 * 7);
+        if (sErr || !signed?.signedUrl)
+          throw new Error("Impossible de préparer la vidéo.");
+        videoUrl = signed.signedUrl;
+      }
+
+      const { data, error } = await supabase
+        .from("posts")
+        .insert({
+          user_id: userId,
+          title: reel.title.trim() || "Réel à programmer",
+          content: reel.transcription ?? "",
+          channel: reel.channel as any,
+          pillar_id: reel.pillar_id,
+          status: "en_redaction",
+          video_url: videoUrl,
+          source_reel_id: reel.id,
+        } as any)
+        .select("id")
+        .single();
+      if (error || !data)
+        throw new Error(error?.message ?? "Création du post impossible.");
+      navigate({ to: "/studio", search: { post: data.id } });
+    } catch (e: any) {
+      setError(e?.message ?? "Programmation impossible.");
+    } finally {
+      setScheduling(null);
+    }
+  }
+
 
 
   const filtered = reels.filter((r) => {
@@ -383,6 +427,8 @@ function ReelsPage() {
               onTransformPost={() => transformToPost(r)}
               onSubtitle={() => generateSubtitles(r)}
               subtitling={subtitling === r.id}
+              onSchedule={() => scheduleReelAsPost(r)}
+              scheduling={scheduling === r.id}
             />
           ))}
         </div>
@@ -446,6 +492,8 @@ function ReelCard({
   onTransformPost,
   onSubtitle,
   subtitling,
+  onSchedule,
+  scheduling,
 }: {
   reel: Reel;
   url?: string;
@@ -457,6 +505,8 @@ function ReelCard({
   onTransformPost: () => void;
   onSubtitle: () => void;
   subtitling: boolean;
+  onSchedule: () => void;
+  scheduling: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const hasTranscription = !!reel.transcription?.trim();
@@ -590,6 +640,24 @@ function ReelCard({
               )}
             </button>
           )}
+          <button
+            onClick={onSchedule}
+            disabled={scheduling}
+            aria-label="Programmer ce réel"
+            title={
+              hasSubtitled
+                ? "Programmer ce réel (version sous-titrée)"
+                : "Programmer ce réel"
+            }
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs hover:bg-muted text-foreground/80 disabled:opacity-40"
+          >
+            {scheduling ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <CalendarPlus className="h-3.5 w-3.5" />
+            )}
+            Programmer
+          </button>
           <button
             onClick={onEdit}
             aria-label="Modifier"
