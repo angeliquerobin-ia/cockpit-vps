@@ -741,16 +741,64 @@ function IdeasPage() {
                     isOver ? "bg-muted/80" : "bg-card/60"
                   } shadow-[var(--shadow-soft)]`}
                 >
-                  <div className="flex items-center gap-2 px-2 pb-3">
-                    <span
-                      className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: col.color }}
-                      aria-hidden
-                    />
-                    <h3 className="text-base flex-1 truncate">{col.name}</h3>
+                  <div className="flex items-center gap-2 px-2 pb-3 group">
+                    {col.id ? (
+                      <input
+                        type="color"
+                        value={col.color}
+                        onChange={(e) => recolorPillar(col.id!, e.target.value)}
+                        aria-label="Couleur du pilier"
+                        className="h-3 w-3 rounded-full border-0 p-0 bg-transparent cursor-pointer appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0"
+                        style={{ backgroundColor: col.color }}
+                      />
+                    ) : (
+                      <span
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: col.color }}
+                        aria-hidden
+                      />
+                    )}
+                    {col.id && editingColId === col.id ? (
+                      <input
+                        autoFocus
+                        value={editingColName}
+                        onChange={(e) => setEditingColName(e.target.value)}
+                        onBlur={() => renamePillar(col.id!, editingColName)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") renamePillar(col.id!, editingColName);
+                          if (e.key === "Escape") setEditingColId(null);
+                        }}
+                        className="flex-1 min-w-0 rounded-md bg-background border border-input px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    ) : (
+                      <h3 className="text-base flex-1 truncate">{col.name}</h3>
+                    )}
                     <span className="text-xs opacity-60 tabular-nums">
                       {list.length}
                     </span>
+                    {col.id && editingColId !== col.id && (
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingColId(col.id);
+                            setEditingColName(col.name);
+                          }}
+                          aria-label="Renommer le pilier"
+                          className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-muted"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deletePillar(col.id!)}
+                          aria-label="Supprimer le pilier"
+                          className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-destructive/10 text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-2 min-h-[60px]">
