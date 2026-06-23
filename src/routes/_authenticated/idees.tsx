@@ -208,6 +208,41 @@ function IdeasPage() {
     }
   }
 
+  async function runOcr(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setOcrLoading(true);
+    setSplitError(null);
+    try {
+      const list = Array.from(files).slice(0, 8);
+      const images = await Promise.all(
+        list.map(
+          (file) =>
+            new Promise<{ dataUrl: string }>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () =>
+                resolve({ dataUrl: reader.result as string });
+              reader.onerror = () => reject(reader.error);
+              reader.readAsDataURL(file);
+            }),
+        ),
+      );
+      const res = await ocrImagesFn({ data: { images } });
+      const extracted = (res.text ?? "").trim();
+      if (!extracted) {
+        setSplitError("Aucun texte n'a pu être lu sur cette image.");
+      } else {
+        setBulkText((prev) =>
+          prev.trim() ? `${prev.trim()}\n\n${extracted}` : extracted,
+        );
+        setBulkOpen(true);
+      }
+    } catch (e: any) {
+      setSplitError(e?.message ?? "Erreur lors de la retranscription");
+    } finally {
+      setOcrLoading(false);
+    }
+  }
+
   async function runSuggest() {
     setSuggesting(true);
     setSuggestError(null);
