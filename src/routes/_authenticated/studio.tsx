@@ -97,7 +97,7 @@ function StudioPage() {
         .order("created_at", { ascending: true }),
       supabase
         .from("posts")
-        .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at")
+        .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at,video_url")
         .eq("user_id", uid)
         .is("deleted_at", null)
         .order("updated_at", { ascending: false }),
@@ -125,7 +125,7 @@ function StudioPage() {
     const { data } = await supabase
       .from("posts")
       .insert({ user_id: userId, title: "", content: "", status: "en_redaction" })
-      .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at")
+      .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at,video_url")
       .single();
     if (data) {
       setPosts((prev) => [data as Post, ...prev]);
