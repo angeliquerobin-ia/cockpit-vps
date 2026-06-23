@@ -427,6 +427,8 @@ function ReelsPage() {
               onTransformPost={() => transformToPost(r)}
               onSubtitle={() => generateSubtitles(r)}
               subtitling={subtitling === r.id}
+              onSchedule={() => scheduleReelAsPost(r)}
+              scheduling={scheduling === r.id}
             />
           ))}
         </div>
