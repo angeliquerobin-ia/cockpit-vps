@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { aiSuggestIdeas, aiSplitIdeas } from "@/lib/ai-writer.functions";
+import { aiSuggestIdeas, aiSplitIdeas, aiOcrImages } from "@/lib/ai-writer.functions";
 import {
   Plus,
   Pencil,
@@ -14,6 +14,7 @@ import {
   Sparkles,
   Scissors,
   GripVertical,
+  ImagePlus,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/idees")({
@@ -76,6 +77,7 @@ function IdeasPage() {
   const navigate = useNavigate();
   const suggestIdeasFn = useServerFn(aiSuggestIdeas);
   const splitIdeasFn = useServerFn(aiSplitIdeas);
+  const ocrImagesFn = useServerFn(aiOcrImages);
   const [userId, setUserId] = useState<string | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -88,6 +90,7 @@ function IdeasPage() {
   const [bulkText, setBulkText] = useState("");
   const [splitting, setSplitting] = useState(false);
   const [splitError, setSplitError] = useState<string | null>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
 
   // AI suggestions
   type Suggestion = {
@@ -202,6 +205,41 @@ function IdeasPage() {
       setSplitError(e?.message ?? "Erreur lors de la scission");
     } finally {
       setSplitting(false);
+    }
+  }
+
+  async function runOcr(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setOcrLoading(true);
+    setSplitError(null);
+    try {
+      const list = Array.from(files).slice(0, 8);
+      const images = await Promise.all(
+        list.map(
+          (file) =>
+            new Promise<{ dataUrl: string }>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () =>
+                resolve({ dataUrl: reader.result as string });
+              reader.onerror = () => reject(reader.error);
+              reader.readAsDataURL(file);
+            }),
+        ),
+      );
+      const res = await ocrImagesFn({ data: { images } });
+      const extracted = (res.text ?? "").trim();
+      if (!extracted) {
+        setSplitError("Aucun texte n'a pu être lu sur cette image.");
+      } else {
+        setBulkText((prev) =>
+          prev.trim() ? `${prev.trim()}\n\n${extracted}` : extracted,
+        );
+        setBulkOpen(true);
+      }
+    } catch (e: any) {
+      setSplitError(e?.message ?? "Erreur lors de la retranscription");
+    } finally {
+      setOcrLoading(false);
     }
   }
 
@@ -428,24 +466,44 @@ function IdeasPage() {
             {splitError && (
               <p className="text-sm text-destructive">{splitError}</p>
             )}
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setBulkText("");
-                  setSplitError(null);
-                }}
-                className="rounded-lg px-3 py-2 text-sm hover:bg-muted transition-colors"
-              >
-                Effacer
-              </button>
-              <button
-                onClick={runSplit}
-                disabled={splitting || !bulkText.trim()}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
-              >
-                <Scissors className="h-4 w-4" />
-                {splitting ? "Scission en cours…" : "Scinder en idées"}
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors">
+                <ImagePlus className="h-4 w-4 text-primary" />
+                {ocrLoading
+                  ? "Retranscription en cours…"
+                  : "Ajouter une photo de texte"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  capture="environment"
+                  disabled={ocrLoading}
+                  onChange={(e) => {
+                    runOcr(e.target.files);
+                    e.target.value = "";
+                  }}
+                  className="hidden"
+                />
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setBulkText("");
+                    setSplitError(null);
+                  }}
+                  className="rounded-lg px-3 py-2 text-sm hover:bg-muted transition-colors"
+                >
+                  Effacer
+                </button>
+                <button
+                  onClick={runSplit}
+                  disabled={splitting || !bulkText.trim()}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+                >
+                  <Scissors className="h-4 w-4" />
+                  {splitting ? "Scission en cours…" : "Scinder en idées"}
+                </button>
+              </div>
             </div>
           </div>
         )}

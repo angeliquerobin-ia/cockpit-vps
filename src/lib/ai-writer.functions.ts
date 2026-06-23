@@ -418,3 +418,50 @@ export const aiDeriveForChannel = createServerFn({ method: "POST" })
 
     return { postId: (inserted as any).id };
   });
+
+// ----- OCR : retranscrire une (ou plusieurs) photo(s) de texte -----
+
+const OcrSchema = z.object({
+  images: z
+    .array(
+      z.object({
+        dataUrl: z.string().min(1),
+      }),
+    )
+    .min(1)
+    .max(8),
+});
+
+export const aiOcrImages = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => OcrSchema.parse(d))
+  .handler(async ({ data }) => {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
+
+    const openrouter = createOpenRouterProvider(apiKey);
+    const model = openrouter("google/gemini-2.5-flash");
+
+    const result = await generateText({
+      model,
+      system:
+        "Tu es un OCR fidèle. Tu reçois une ou plusieurs photos contenant du texte (notes manuscrites, captures, pages). Tu retranscris UNIQUEMENT le texte visible, dans l'ordre de lecture naturel. N'ajoute aucun commentaire, aucune mise en forme inventée, aucun titre. Conserve les sauts de ligne quand ils structurent le texte. Si plusieurs images sont fournies, sépare la retranscription de chaque image par une ligne vide. Si une image ne contient pas de texte lisible, ignore-la.",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Retranscris fidèlement le texte présent dans ces images.",
+            },
+            ...data.images.map(
+              (img) =>
+                ({ type: "image", image: img.dataUrl }) as const,
+            ),
+          ],
+        },
+      ],
+    });
+
+    return { text: result.text.trim() };
+  });
