@@ -376,15 +376,18 @@ function IdeasPage() {
     [pillars],
   );
 
-  const filteredIdeas = useMemo(
-    () =>
-      ideas.filter((i) => {
-        if (fChannel !== "all" && i.channel !== fChannel) return false;
-        if (fStatus !== "all" && i.status !== fStatus) return false;
-        return true;
-      }),
-    [ideas, fChannel, fStatus],
-  );
+  const filteredIdeas = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return ideas.filter((i) => {
+      if (fChannel !== "all" && i.channel !== fChannel) return false;
+      if (fStatus !== "all" && i.status !== fStatus) return false;
+      if (q) {
+        const hay = `${i.title} ${i.note ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [ideas, fChannel, fStatus, search]);
 
   const columns: { id: string | null; name: string; color: string }[] = [
     ...pillars.map((p) => ({ id: p.id, name: p.name, color: p.color })),
