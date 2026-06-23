@@ -28,6 +28,7 @@ type Post = {
   channel: Channel | null;
   pillar_id: string | null;
   scheduled_at: string | null;
+  video_url: string | null;
 };
 
 const CHANNEL_INITIAL: Record<Channel, string> = {
