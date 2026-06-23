@@ -93,7 +93,8 @@ export const publishPostViaN8n = createServerFn({ method: "POST" })
         if (signed?.signedUrl) videoUrl = signed.signedUrl;
       }
     }
-    if (!p.content?.trim()) throw new Error("Le contenu du post est vide.");
+    if (!p.content?.trim() && !videoUrl)
+      throw new Error("Le post est vide (ni texte ni vidéo).");
 
     // 4) Détermine le moment
     let scheduledAtIso: string | null = null;
@@ -113,6 +114,8 @@ export const publishPostViaN8n = createServerFn({ method: "POST" })
         content: p.content,
         channel: data.channel,
         pillar_id: p.pillar_id,
+        video_url: videoUrl,
+        kind: videoUrl ? "video" : "text",
       },
       timing: {
         mode: data.timing, // "now" | "schedule" | "auto"
