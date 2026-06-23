@@ -190,7 +190,7 @@ function IdeasPage() {
         }));
         const { data } = await supabase
           .from("ideas")
-          .insert(rows)
+          .insert(rows as any)
           .select("id,title,note,pillar_id,channel,status,created_at");
         if (data) {
           setIdeas((prev) => [...(data as Idea[]), ...prev]);
