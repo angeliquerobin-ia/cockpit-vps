@@ -641,6 +641,24 @@ function ReelCard({
             </button>
           )}
           <button
+            onClick={onSchedule}
+            disabled={scheduling}
+            aria-label="Programmer ce réel"
+            title={
+              hasSubtitled
+                ? "Programmer ce réel (version sous-titrée)"
+                : "Programmer ce réel"
+            }
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs hover:bg-muted text-foreground/80 disabled:opacity-40"
+          >
+            {scheduling ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <CalendarPlus className="h-3.5 w-3.5" />
+            )}
+            Programmer
+          </button>
+          <button
             onClick={onEdit}
             aria-label="Modifier"
             className="h-8 w-8 inline-flex items-center justify-center rounded-md hover:bg-muted text-foreground/70"
