@@ -15,6 +15,7 @@ import {
   Scissors,
   GripVertical,
   ImagePlus,
+  Search,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/idees")({
