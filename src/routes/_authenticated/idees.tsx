@@ -369,7 +369,7 @@ function IdeasPage() {
   async function deletePillar(id: string) {
     const count = ideas.filter((i) => i.pillar_id === id).length;
     const msg = count
-      ? `Supprimer ce pilier ? Les ${count} idée(s) associée(s) seront déplacées vers « Sans pilier ».`
+      ? `Supprimer ce pilier ? Les ${count} idée(s) associée(s) seront déplacées vers « À ranger ».`
       : "Supprimer ce pilier ?";
     if (!confirm(msg)) return;
     setIdeas((prev) =>
