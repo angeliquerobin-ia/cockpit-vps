@@ -369,7 +369,7 @@ function IdeasPage() {
   async function deletePillar(id: string) {
     const count = ideas.filter((i) => i.pillar_id === id).length;
     const msg = count
-      ? `Supprimer ce pilier ? Les ${count} idée(s) associée(s) seront déplacées vers « Sans pilier ».`
+      ? `Supprimer ce pilier ? Les ${count} idée(s) associée(s) seront déplacées vers « À ranger ».`
       : "Supprimer ce pilier ?";
     if (!confirm(msg)) return;
     setIdeas((prev) =>
@@ -429,7 +429,7 @@ function IdeasPage() {
 
   const columns: { id: string | null; name: string; color: string }[] = [
     ...pillars.map((p) => ({ id: p.id, name: p.name, color: p.color })),
-    { id: null, name: "Sans pilier", color: "#8a8276" },
+    { id: null, name: "À ranger", color: "#8a8276" },
   ];
 
   const ideasByCol = useMemo(() => {

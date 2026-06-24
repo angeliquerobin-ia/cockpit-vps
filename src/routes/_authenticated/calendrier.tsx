@@ -332,7 +332,7 @@ function CalendarPage() {
                         onClick={() =>
                           setOpenedPost(p)
                         }
-                        title={`${pillar?.name ?? "Sans pilier"}${p.channel ? " · " + CHANNEL_LABEL[p.channel] : ""}`}
+                        title={`${pillar?.name ?? "À ranger"}${p.channel ? " · " + CHANNEL_LABEL[p.channel] : ""}`}
                         className="text-left rounded-md px-2 py-1.5 text-xs leading-snug cursor-grab active:cursor-grabbing hover:brightness-95 transition-all"
                         style={{
                           backgroundColor: color + "26",

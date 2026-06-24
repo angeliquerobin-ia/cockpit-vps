@@ -112,8 +112,8 @@ export const analyzePerformance = createServerFn({ method: "POST" })
     const published = posts.filter((p) => p.status === "publie");
     for (const p of published) {
       const pname = p.pillar_id
-        ? (pillarById.get(p.pillar_id)?.name ?? "(sans pilier)")
-        : "(sans pilier)";
+        ? (pillarById.get(p.pillar_id)?.name ?? "(à ranger)")
+        : "(à ranger)";
       byPillar.set(pname, (byPillar.get(pname) ?? 0) + 1);
       const cname = p.channel
         ? (CHANNEL_LABELS[p.channel] ?? p.channel)
