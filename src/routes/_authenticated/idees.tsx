@@ -429,7 +429,7 @@ function IdeasPage() {
 
   const columns: { id: string | null; name: string; color: string }[] = [
     ...pillars.map((p) => ({ id: p.id, name: p.name, color: p.color })),
-    { id: null, name: "Sans pilier", color: "#8a8276" },
+    { id: null, name: "À ranger", color: "#8a8276" },
   ];
 
   const ideasByCol = useMemo(() => {
