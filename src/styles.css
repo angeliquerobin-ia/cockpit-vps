@@ -50,46 +50,45 @@
 :root {
   --radius: 0.875rem;
 
-  /* Linen-light palette — light everywhere, terracotta reserved for titles, brown for buttons */
-  --background: #faf4e8;          /* page bg — light linen */
-  --foreground: #5a3b2a;          /* main text — warm brown */
+  /* Linen palette with subtle depth between background and surfaces */
+  --background: #f4ece0;          /* page bg — toned linen */
+  --foreground: #3d2a1f;          /* main text — warm dark brown */
 
-  --card: #f7f0e3;                /* cards — soft linen, barely darker than bg */
-  --card-foreground: #5a3b2a;
+  --card: #faf5ec;                /* cards — lighter than bg, lifted */
+  --card-foreground: #3d2a1f;
 
-  --popover: #faf4e8;
-  --popover-foreground: #5a3b2a;
+  --popover: #faf5ec;
+  --popover-foreground: #3d2a1f;
 
-  --primary: #5a3b2a;             /* buttons — brown */
-  --primary-foreground: #faf4e8;
+  --primary: #a7421b;             /* buttons — terracotta */
+  --primary-foreground: #faf5ec;
 
-  --secondary: #f0e8d6;           /* secondary surfaces — slightly toned linen */
-  --secondary-foreground: #5a3b2a;
+  --secondary: #ede2cf;
+  --secondary-foreground: #3d2a1f;
 
-  --muted: #f0e8d6;               /* inputs, chips — light */
-  --muted-foreground: #8a6f5a;
+  --muted: #f0e6d3;
+  --muted-foreground: #7a5a45;
 
-  --accent: #f0e8d6;
-  --accent-foreground: #5a3b2a;
+  --accent: #ede2cf;
+  --accent-foreground: #3d2a1f;
 
-  --destructive: #a7421b;
-  --destructive-foreground: #faf4e8;
+  --destructive: #8a2f15;
+  --destructive-foreground: #faf5ec;
 
-  --border: #e6dcc5;              /* subtle linen border */
-  --input: #e6dcc5;
-  --ring: #5a3b2a;
+  --border: #e0d3b8;
+  --input: #e0d3b8;
+  --ring: #a7421b;
 
-  /* Terracotta is reserved exclusively for titles & in-text accents */
   --title-accent: #a7421b;
 
-  --sidebar: #f7f0e3;             /* sidebar — light linen, not dark */
-  --sidebar-foreground: #5a3b2a;
-  --sidebar-primary: #5a3b2a;
-  --sidebar-primary-foreground: #faf4e8;
-  --sidebar-accent: #f0e8d6;
-  --sidebar-accent-foreground: #5a3b2a;
-  --sidebar-border: #e6dcc5;
-  --sidebar-ring: #5a3b2a;
+  --sidebar: #ede2cf;             /* sidebar — toned, distinct from main bg */
+  --sidebar-foreground: #3d2a1f;
+  --sidebar-primary: #a7421b;
+  --sidebar-primary-foreground: #faf5ec;
+  --sidebar-accent: #e0d3b8;
+  --sidebar-accent-foreground: #3d2a1f;
+  --sidebar-border: #d6c7a8;
+  --sidebar-ring: #a7421b;
 }
 
 @layer base {

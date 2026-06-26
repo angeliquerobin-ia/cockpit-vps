@@ -54,7 +54,7 @@ function AuthPage() {
       <Toaster />
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <h1 className="text-4xl mb-2">Cockpit</h1>
+          <h1 className="display text-5xl mb-2">Cockpit</h1>
           <p className="text-sm opacity-70">
             <em>Création de contenu, en un seul lieu.</em>
           </p>
