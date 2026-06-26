@@ -43,10 +43,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex bg-background">
       <aside className="w-64 shrink-0 bg-sidebar text-sidebar-foreground flex flex-col">
         <div className="p-6 border-b border-sidebar-border">
-          <h2 className="text-2xl text-sidebar-foreground">Cockpit</h2>
-          <p className="text-xs mt-1" style={{ color: "#f0e3cc" }}>
-            <em style={{ color: "#f0e3cc", opacity: 0.85 }}>Création de contenu</em>
+          <h2 className="display text-3xl">Cockpit</h2>
+          <p className="text-xs mt-1 opacity-70">
+            <em>Création de contenu</em>
           </p>
+
 
         </div>
 
