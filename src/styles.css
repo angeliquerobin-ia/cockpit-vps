@@ -50,43 +50,46 @@
 :root {
   --radius: 0.875rem;
 
-  /* Warm organic palette — no pure white anywhere */
-  --background: #f7f0e3;          /* page bg */
-  --foreground: #5a3b2a;          /* main text */
+  /* Linen-light palette — light everywhere, terracotta reserved for titles, brown for buttons */
+  --background: #faf4e8;          /* page bg — light linen */
+  --foreground: #5a3b2a;          /* main text — warm brown */
 
-  --card: #dfcbae;                /* blocks & cards */
+  --card: #f7f0e3;                /* cards — soft linen, barely darker than bg */
   --card-foreground: #5a3b2a;
 
-  --popover: #f0e3cc;
+  --popover: #faf4e8;
   --popover-foreground: #5a3b2a;
 
-  --primary: #a7421b;             /* terracotta accent */
-  --primary-foreground: #f7f0e3;
+  --primary: #5a3b2a;             /* buttons — brown */
+  --primary-foreground: #faf4e8;
 
-  --secondary: #dfcbae;
+  --secondary: #f0e8d6;           /* secondary surfaces — slightly toned linen */
   --secondary-foreground: #5a3b2a;
 
-  --muted: #cdb48e;               /* inputs, chips */
-  --muted-foreground: #5a3b2a;
+  --muted: #f0e8d6;               /* inputs, chips — light */
+  --muted-foreground: #8a6f5a;
 
-  --accent: #a7421b;
-  --accent-foreground: #f7f0e3;
+  --accent: #f0e8d6;
+  --accent-foreground: #5a3b2a;
 
   --destructive: #a7421b;
-  --destructive-foreground: #f7f0e3;
+  --destructive-foreground: #faf4e8;
 
-  --border: #cdb48e;
-  --input: #cdb48e;
-  --ring: #a7421b;
+  --border: #e6dcc5;              /* subtle linen border */
+  --input: #e6dcc5;
+  --ring: #5a3b2a;
 
-  --sidebar: #5a3b2a;             /* dark zones, sidebar, footers */
-  --sidebar-foreground: #f7f0e3;
-  --sidebar-primary: #a7421b;
-  --sidebar-primary-foreground: #f7f0e3;
-  --sidebar-accent: #6b4a37;
-  --sidebar-accent-foreground: #f7f0e3;
-  --sidebar-border: #6b4a37;
-  --sidebar-ring: #a7421b;
+  /* Terracotta is reserved exclusively for titles & in-text accents */
+  --title-accent: #a7421b;
+
+  --sidebar: #f7f0e3;             /* sidebar — light linen, not dark */
+  --sidebar-foreground: #5a3b2a;
+  --sidebar-primary: #5a3b2a;
+  --sidebar-primary-foreground: #faf4e8;
+  --sidebar-accent: #f0e8d6;
+  --sidebar-accent-foreground: #5a3b2a;
+  --sidebar-border: #e6dcc5;
+  --sidebar-ring: #5a3b2a;
 }
 
 @layer base {
@@ -102,23 +105,35 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Default: Poppins for everything, including most headings (titres de cartes,
+     sous-titres, placeholders, etc.). Only the large page titles get Cormorant
+     + terracotta — opt in with the .display class, or use <h1>. */
   h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    color: var(--foreground);
+  }
+
+  /* Grands titres de page : Cormorant + terracotta */
+  h1, .display {
     font-family: var(--font-serif);
     font-weight: 500;
     letter-spacing: -0.01em;
-    color: var(--color-foreground);
+    color: var(--title-accent);
   }
 
   em, i, .accent-italic {
     font-style: italic;
-    color: var(--color-primary);
+    color: var(--title-accent);
     font-family: var(--font-serif);
   }
 
   a {
-    color: var(--color-primary);
+    color: var(--title-accent);
   }
 }
+
 
 /* Rich text editor (TipTap) — strategy page */
 .prose-strategy h2 {
