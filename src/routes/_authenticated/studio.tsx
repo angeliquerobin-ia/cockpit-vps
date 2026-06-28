@@ -176,8 +176,8 @@ function StudioPage() {
         <div className="space-y-2">
           <p className="text-xs uppercase tracking-[0.2em] opacity-60">L'atelier</p>
           <h1 className="text-5xl">Studio de rédaction</h1>
-          <p className="text-base opacity-75 max-w-2xl">
-            <em>Rédigez, peaufinez, organisez vos posts par canal et par pilier.</em>
+          <p className="tagline text-base max-w-2xl">
+            Rédigez, peaufinez, organisez vos posts par canal et par pilier.
           </p>
         </div>
         <button
