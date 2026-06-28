@@ -14,6 +14,7 @@ import {
   LogOut,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import cockpitLogo from "@/assets/cockpit-logo.png.asset.json";
 
 const nav = [
   { to: "/strategie", label: "Stratégie", icon: Compass },
@@ -42,13 +43,14 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex bg-background">
       <aside className="w-64 shrink-0 bg-sidebar text-sidebar-foreground flex flex-col">
-        <div className="p-6 border-b border-sidebar-border">
-          <h2 className="display text-3xl">Cockpit</h2>
-          <p className="text-xs mt-1 opacity-70">
-            <em>Création de contenu</em>
-          </p>
-
-
+        <div className="px-6 py-5 border-b border-sidebar-border flex flex-col items-center">
+          <img
+            src={cockpitLogo.url}
+            alt="Cockpit"
+            className="h-24 w-auto select-none"
+            draggable={false}
+          />
+          <p className="tagline text-xs mt-1 text-center">Création de contenu</p>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">

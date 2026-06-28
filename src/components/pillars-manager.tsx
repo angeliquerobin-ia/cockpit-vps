@@ -19,8 +19,7 @@ type Pillar = {
 
 const CHANNELS: { value: Channel; label: string }[] = [
   { value: "linkedin", label: "LinkedIn" },
-  { value: "instagram_coaching", label: "Instagram coaching" },
-  { value: "instagram_chroniques_cosmiques", label: "Instagram Chroniques Cosmiques" },
+  { value: "instagram_coaching", label: "Instagram" },
   { value: "podcast", label: "Podcast" },
   { value: "substack", label: "Substack" },
 ];

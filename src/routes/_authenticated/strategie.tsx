@@ -25,18 +25,16 @@ function StrategiePage() {
           Vision et lignes directrices
         </p>
         <h1 className="text-5xl">Stratégie</h1>
-        <p className="text-base opacity-75 max-w-2xl">
-          <em>
-            Posez votre cap, vos piliers, votre ton. C'est la boussole que toutes les autres pages suivront.
-          </em>
+        <p className="tagline text-base max-w-2xl">
+          Posez votre cap, vos piliers, votre ton. C'est la boussole que toutes les autres pages suivront.
         </p>
       </header>
 
       <section className="space-y-5">
         <div>
           <h2 className="text-3xl">Ligne éditoriale</h2>
-          <p className="text-sm opacity-70 mt-1">
-            <em>Votre positionnement, votre audience, votre ton, vos objectifs.</em>
+          <p className="tagline text-sm mt-1">
+            Votre positionnement, votre audience, votre ton, vos objectifs.
           </p>
         </div>
         {userId ? (

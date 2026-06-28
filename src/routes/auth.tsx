@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import cockpitLogo from "@/assets/cockpit-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -53,11 +54,14 @@ function AuthPage() {
     <div className="min-h-screen flex items-center justify-center px-4 bg-background">
       <Toaster />
       <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <h1 className="display text-5xl mb-2">Cockpit</h1>
-          <p className="text-sm opacity-70">
-            <em>Création de contenu, en un seul lieu.</em>
-          </p>
+        <div className="flex flex-col items-center mb-10">
+          <img
+            src={cockpitLogo.url}
+            alt="Cockpit"
+            className="h-40 w-auto mb-3 select-none"
+            draggable={false}
+          />
+          <p className="tagline text-sm">Création de contenu, en un seul lieu.</p>
         </div>
 
         <div className="bg-card rounded-2xl p-8 shadow-[var(--shadow-card)]">

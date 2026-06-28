@@ -51,16 +51,17 @@
   --radius: 0.875rem;
 
   /* Linen palette with subtle depth between background and surfaces */
-  --background: #f4ece0;          /* page bg — toned linen */
-  --foreground: #3d2a1f;          /* main text — warm dark brown */
+  --background: #f4ece0;
+  --foreground: #3d2a1f;
 
-  --card: #faf5ec;                /* cards — lighter than bg, lifted */
+  --card: #faf5ec;
   --card-foreground: #3d2a1f;
 
   --popover: #faf5ec;
   --popover-foreground: #3d2a1f;
 
-  --primary: #a7421b;             /* buttons — terracotta */
+  /* Terracotta tuned to the Cockpit logo */
+  --primary: #c25a35;
   --primary-foreground: #faf5ec;
 
   --secondary: #ede2cf;
@@ -77,18 +78,18 @@
 
   --border: #e0d3b8;
   --input: #e0d3b8;
-  --ring: #a7421b;
+  --ring: #c25a35;
 
-  --title-accent: #a7421b;
+  --title-accent: #c25a35;
 
-  --sidebar: #ede2cf;             /* sidebar — toned, distinct from main bg */
+  --sidebar: #ede2cf;
   --sidebar-foreground: #3d2a1f;
-  --sidebar-primary: #a7421b;
+  --sidebar-primary: #c25a35;
   --sidebar-primary-foreground: #faf5ec;
   --sidebar-accent: #e0d3b8;
   --sidebar-accent-foreground: #3d2a1f;
   --sidebar-border: #d6c7a8;
-  --sidebar-ring: #a7421b;
+  --sidebar-ring: #c25a35;
 }
 
 @layer base {
@@ -104,28 +105,25 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Default: Poppins for everything, including most headings (titres de cartes,
-     sous-titres, placeholders, etc.). Only the large page titles get Cormorant
-     + terracotta — opt in with the .display class, or use <h1>. */
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-sans);
-    font-weight: 500;
-    letter-spacing: -0.005em;
-    color: var(--foreground);
-  }
-
-  /* Grands titres de page : Cormorant + terracotta */
-  h1, .display {
+  /* All titles : Cormorant Garamond, terracotta. */
+  h1, h2, h3, h4, h5, h6, .display {
     font-family: var(--font-serif);
     font-weight: 500;
     letter-spacing: -0.01em;
     color: var(--title-accent);
   }
 
-  em, i, .accent-italic {
+  /* Slogans / taglines : Poppins for readability. */
+  .tagline {
+    font-family: var(--font-sans);
+    font-style: normal;
+    font-weight: 300;
+    color: var(--foreground);
+    opacity: 0.78;
+  }
+
+  em, i {
     font-style: italic;
-    color: var(--title-accent);
-    font-family: var(--font-serif);
   }
 
   a {
@@ -180,4 +178,3 @@
   height: 0;
   pointer-events: none;
 }
-
