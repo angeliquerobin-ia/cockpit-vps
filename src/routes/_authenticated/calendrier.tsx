@@ -34,14 +34,14 @@ type Post = {
 const CHANNEL_INITIAL: Record<Channel, string> = {
   linkedin: "in",
   instagram_coaching: "Ig",
-  instagram_chroniques_cosmiques: "Cc",
+  instagram_chroniques_cosmiques: "Ig",
   podcast: "Po",
   substack: "Sb",
 };
 const CHANNEL_LABEL: Record<Channel, string> = {
   linkedin: "LinkedIn",
-  instagram_coaching: "Instagram coaching",
-  instagram_chroniques_cosmiques: "Instagram Chroniques Cosmiques",
+  instagram_coaching: "Instagram",
+  instagram_chroniques_cosmiques: "Instagram",
   podcast: "Podcast",
   substack: "Substack",
 };

@@ -1,7 +1,8 @@
 export const CHANNEL_LABELS: Record<string, string> = {
   linkedin: "LinkedIn",
-  instagram_coaching: "Instagram coaching",
-  instagram_chroniques_cosmiques: "Instagram Chroniques Cosmiques",
+  instagram_coaching: "Instagram",
+  // Legacy value kept for backwards compatibility with existing rows; displayed as "Instagram".
+  instagram_chroniques_cosmiques: "Instagram",
   podcast: "Podcast",
   substack: "Substack",
 };
@@ -9,7 +10,6 @@ export const CHANNEL_LABELS: Record<string, string> = {
 export const ALL_CHANNELS = [
   "linkedin",
   "instagram_coaching",
-  "instagram_chroniques_cosmiques",
   "podcast",
   "substack",
 ] as const;
@@ -29,7 +29,6 @@ Appel à l'action : une invitation douce mais claire et adaptée (commenter, enr
 Forme : paragraphes courts et aérés, lisibles sur mobile. Émojis sobres et optionnels, seulement s'ils servent. Aucun tiret cadratin.
 
 À éviter : le jargon corporate, le ton donneur de leçon, les phrases hachées. Termine en proposant quelques hashtags pertinents.`,
-  instagram_chroniques_cosmiques: "",
   podcast: "",
   substack: "",
 };

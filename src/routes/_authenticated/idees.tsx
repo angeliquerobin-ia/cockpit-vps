@@ -46,8 +46,7 @@ type Idea = {
 
 const CHANNELS: { value: Channel; label: string }[] = [
   { value: "linkedin", label: "LinkedIn" },
-  { value: "instagram_coaching", label: "Instagram coaching" },
-  { value: "instagram_chroniques_cosmiques", label: "Instagram Chroniques Cosmiques" },
+  { value: "instagram_coaching", label: "Instagram" },
   { value: "podcast", label: "Podcast" },
   { value: "substack", label: "Substack" },
 ];
@@ -452,11 +451,9 @@ function IdeasPage() {
           Réservoir d'inspirations
         </p>
         <h1 className="text-5xl">Idées</h1>
-        <p className="text-base opacity-75 max-w-2xl">
-          <em>
-            Capturez chaque étincelle, scindez vos braindumps en cartes, glissez-les
-            de pilier en pilier.
-          </em>
+        <p className="tagline text-base max-w-2xl">
+          Capturez chaque étincelle, scindez vos braindumps en cartes, glissez-les
+          de pilier en pilier.
         </p>
       </header>
 
@@ -490,11 +487,9 @@ function IdeasPage() {
           <Scissors className="h-5 w-5 text-primary shrink-0" />
           <div className="flex-1">
             <h2 className="text-2xl">Scinder un texte en idées</h2>
-            <p className="text-sm opacity-70">
-              <em>
-                Collez un braindump, un vocal retranscrit, une note brute — l'app
-                en extrait une carte par idée.
-              </em>
+            <p className="tagline text-sm">
+              Collez un braindump, un vocal retranscrit, une note brute — l'app
+              en extrait une carte par idée.
             </p>
           </div>
           <span className="text-xs opacity-60">{bulkOpen ? "Replier" : "Ouvrir"}</span>

@@ -251,11 +251,9 @@ function ReglagesPage() {
           L'établi
         </p>
         <h1 className="text-5xl">Réglages</h1>
-        <p className="text-base opacity-75 max-w-2xl">
-          <em>
-            Le centre de configuration de l'app : plan, réseaux, voix de
-            l'agent, et passerelles N8N.
-          </em>
+        <p className="tagline text-base max-w-2xl">
+          Le centre de configuration de l'app : plan, réseaux, voix de
+          l'agent, et passerelles N8N.
         </p>
       </header>
 
