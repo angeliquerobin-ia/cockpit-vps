@@ -9,10 +9,15 @@ import {
   Check,
   Lightbulb,
   BarChart3,
+  Quote,
+  Grid3x3,
+  FileText,
+  TrendingDown,
 } from "lucide-react";
 import { refreshStats, analyzePerformance } from "@/lib/stats.functions";
 import { createIdeaFromSuggestion } from "@/lib/competitors.functions";
 import { CHANNEL_LABELS } from "@/lib/channel-prompts";
+import { STATS_MODE_LABELS, type StatsMode } from "@/lib/stats-prompts";
 
 export const Route = createFileRoute("/_authenticated/statistiques")({
   head: () => ({ meta: [{ title: "Statistiques — Cockpit" }] }),
