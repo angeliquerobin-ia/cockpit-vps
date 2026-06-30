@@ -183,11 +183,11 @@ function StatsPage() {
             Rafraîchir
           </button>
           <button
-            onClick={handleAnalyze}
-            disabled={analyzing || !snapshot}
+            onClick={() => handleAnalyze("full")}
+            disabled={analyzingMode !== null || !snapshot}
             className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50"
           >
-            {analyzing ? (
+            {analyzingMode === "full" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Sparkles className="h-4 w-4" />
@@ -196,6 +196,49 @@ function StatsPage() {
           </button>
         </div>
       </header>
+
+      {/* Modes spécialisés */}
+      {snapshot && (
+        <section className="space-y-3">
+          <p className="text-xs uppercase tracking-[0.2em] opacity-60">
+            Modes d'analyse
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <ModeButton
+              icon={<Quote className="h-4 w-4" />}
+              label={STATS_MODE_LABELS.hooks}
+              active={activeMode === "hooks" && !!analyses.hooks}
+              loading={analyzingMode === "hooks"}
+              disabled={analyzingMode !== null}
+              onClick={() => handleAnalyze("hooks")}
+            />
+            <ModeButton
+              icon={<Grid3x3 className="h-4 w-4" />}
+              label={STATS_MODE_LABELS.matrix}
+              active={activeMode === "matrix" && !!analyses.matrix}
+              loading={analyzingMode === "matrix"}
+              disabled={analyzingMode !== null}
+              onClick={() => handleAnalyze("matrix")}
+            />
+            <ModeButton
+              icon={<FileText className="h-4 w-4" />}
+              label={STATS_MODE_LABELS.monthly}
+              active={activeMode === "monthly" && !!analyses.monthly}
+              loading={analyzingMode === "monthly"}
+              disabled={analyzingMode !== null}
+              onClick={() => handleAnalyze("monthly")}
+            />
+            <ModeButton
+              icon={<TrendingDown className="h-4 w-4" />}
+              label={STATS_MODE_LABELS.drop}
+              active={activeMode === "drop" && !!analyses.drop}
+              loading={analyzingMode === "drop"}
+              disabled={analyzingMode !== null}
+              onClick={() => handleAnalyze("drop")}
+            />
+          </div>
+        </section>
+      )}
 
       {refreshError && (
         <p className="text-sm text-destructive rounded-lg bg-destructive/10 px-3 py-2">
