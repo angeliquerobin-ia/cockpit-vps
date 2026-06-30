@@ -50,10 +50,17 @@ function StatsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
 
-  const [analysis, setAnalysis] = useState<string | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
+  const [analyses, setAnalyses] = useState<Record<StatsMode, string | null>>({
+    full: null,
+    hooks: null,
+    matrix: null,
+    monthly: null,
+    drop: null,
+  });
+  const [analyzingMode, setAnalyzingMode] = useState<StatsMode | null>(null);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [addedIdeas, setAddedIdeas] = useState<Set<string>>(new Set());
+  const [activeMode, setActiveMode] = useState<StatsMode>("full");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -89,16 +96,17 @@ function StatsPage() {
     }
   }
 
-  async function handleAnalyze() {
-    setAnalyzing(true);
+  async function handleAnalyze(mode: StatsMode) {
+    setAnalyzingMode(mode);
     setAnalyzeError(null);
+    setActiveMode(mode);
     try {
-      const r = await analyze({});
-      setAnalysis(r.analysis);
+      const r = await analyze({ data: { mode } });
+      setAnalyses((a) => ({ ...a, [mode]: r.analysis }));
     } catch (e: any) {
       setAnalyzeError(e?.message ?? "Analyse impossible.");
     } finally {
-      setAnalyzing(false);
+      setAnalyzingMode(null);
     }
   }
 
