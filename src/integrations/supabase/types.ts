@@ -381,6 +381,7 @@ export type Database = {
           active_channels: string[]
           created_at: string
           metricool_plan: string
+          stats_prompt: string
           updated_at: string
           user_id: string
           webhook_competitors: string
@@ -394,6 +395,7 @@ export type Database = {
           active_channels?: string[]
           created_at?: string
           metricool_plan?: string
+          stats_prompt?: string
           updated_at?: string
           user_id: string
           webhook_competitors?: string
@@ -407,6 +409,7 @@ export type Database = {
           active_channels?: string[]
           created_at?: string
           metricool_plan?: string
+          stats_prompt?: string
           updated_at?: string
           user_id?: string
           webhook_competitors?: string

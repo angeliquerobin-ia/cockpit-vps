@@ -1,0 +1,1 @@
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS stats_prompt text NOT NULL DEFAULT '';
