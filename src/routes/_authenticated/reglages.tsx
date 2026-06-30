@@ -6,6 +6,7 @@ import {
   CHANNEL_LABELS,
   DEFAULT_CHANNEL_PROMPTS,
 } from "@/lib/channel-prompts";
+import { DEFAULT_STATS_PROMPT } from "@/lib/stats-prompts";
 import {
   Save,
   Sparkles,
@@ -16,6 +17,7 @@ import {
   AlertTriangle,
   Check,
   Info,
+  RotateCcw,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/reglages")({
@@ -34,6 +36,7 @@ type Settings = {
   webhook_competitors_content: string;
   webhook_transcription: string;
   webhook_subtitles: string;
+  stats_prompt: string;
 };
 
 const DEFAULT_SETTINGS: Settings = {
@@ -45,6 +48,7 @@ const DEFAULT_SETTINGS: Settings = {
   webhook_competitors_content: "",
   webhook_transcription: "",
   webhook_subtitles: "",
+  stats_prompt: "",
 };
 
 const PLAN_INFO: Record<Plan, { label: string; limits: string[] }> = {
@@ -165,6 +169,7 @@ function ReglagesPage() {
           webhook_competitors_content: s.webhook_competitors_content ?? "",
           webhook_transcription: s.webhook_transcription ?? "",
           webhook_subtitles: s.webhook_subtitles ?? "",
+          stats_prompt: s.stats_prompt ?? "",
         });
       } else {
         // First time : seed row
