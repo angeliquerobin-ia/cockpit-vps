@@ -23,7 +23,7 @@ const nav = [
   { to: "/studio", label: "Studio de rédaction", icon: PenLine },
   { to: "/reels", label: "Réels", icon: Film },
   { to: "/statistiques", label: "Statistiques", icon: BarChart3 },
-  { to: "/concurrents", label: "Concurrents", icon: Users },
+  { to: "/concurrents", label: "Veille stratégique", icon: Users },
   { to: "/corbeille", label: "Corbeille", icon: Trash2 },
   { to: "/reglages", label: "Réglages", icon: Settings },
 ] as const;

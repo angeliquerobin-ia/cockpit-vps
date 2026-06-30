@@ -9,10 +9,15 @@ import {
   Check,
   Lightbulb,
   BarChart3,
+  Quote,
+  Grid3x3,
+  FileText,
+  TrendingDown,
 } from "lucide-react";
 import { refreshStats, analyzePerformance } from "@/lib/stats.functions";
 import { createIdeaFromSuggestion } from "@/lib/competitors.functions";
 import { CHANNEL_LABELS } from "@/lib/channel-prompts";
+import { STATS_MODE_LABELS, type StatsMode } from "@/lib/stats-prompts";
 
 export const Route = createFileRoute("/_authenticated/statistiques")({
   head: () => ({ meta: [{ title: "Statistiques — Cockpit" }] }),
@@ -45,10 +50,17 @@ function StatsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
 
-  const [analysis, setAnalysis] = useState<string | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
+  const [analyses, setAnalyses] = useState<Record<StatsMode, string | null>>({
+    full: null,
+    hooks: null,
+    matrix: null,
+    monthly: null,
+    drop: null,
+  });
+  const [analyzingMode, setAnalyzingMode] = useState<StatsMode | null>(null);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [addedIdeas, setAddedIdeas] = useState<Set<string>>(new Set());
+  const [activeMode, setActiveMode] = useState<StatsMode>("full");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -84,16 +96,17 @@ function StatsPage() {
     }
   }
 
-  async function handleAnalyze() {
-    setAnalyzing(true);
+  async function handleAnalyze(mode: StatsMode) {
+    setAnalyzingMode(mode);
     setAnalyzeError(null);
+    setActiveMode(mode);
     try {
-      const r = await analyze({});
-      setAnalysis(r.analysis);
+      const r = await analyze({ data: { mode } });
+      setAnalyses((a) => ({ ...a, [mode]: r.analysis }));
     } catch (e: any) {
       setAnalyzeError(e?.message ?? "Analyse impossible.");
     } finally {
-      setAnalyzing(false);
+      setAnalyzingMode(null);
     }
   }
 
@@ -170,11 +183,11 @@ function StatsPage() {
             Rafraîchir
           </button>
           <button
-            onClick={handleAnalyze}
-            disabled={analyzing || !snapshot}
+            onClick={() => handleAnalyze("full")}
+            disabled={analyzingMode !== null || !snapshot}
             className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50"
           >
-            {analyzing ? (
+            {analyzingMode === "full" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Sparkles className="h-4 w-4" />
@@ -183,6 +196,49 @@ function StatsPage() {
           </button>
         </div>
       </header>
+
+      {/* Modes spécialisés */}
+      {snapshot && (
+        <section className="space-y-3">
+          <p className="text-xs uppercase tracking-[0.2em] opacity-60">
+            Modes d'analyse
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <ModeButton
+              icon={<Quote className="h-4 w-4" />}
+              label={STATS_MODE_LABELS.hooks}
+              active={activeMode === "hooks" && !!analyses.hooks}
+              loading={analyzingMode === "hooks"}
+              disabled={analyzingMode !== null}
+              onClick={() => handleAnalyze("hooks")}
+            />
+            <ModeButton
+              icon={<Grid3x3 className="h-4 w-4" />}
+              label={STATS_MODE_LABELS.matrix}
+              active={activeMode === "matrix" && !!analyses.matrix}
+              loading={analyzingMode === "matrix"}
+              disabled={analyzingMode !== null}
+              onClick={() => handleAnalyze("matrix")}
+            />
+            <ModeButton
+              icon={<FileText className="h-4 w-4" />}
+              label={STATS_MODE_LABELS.monthly}
+              active={activeMode === "monthly" && !!analyses.monthly}
+              loading={analyzingMode === "monthly"}
+              disabled={analyzingMode !== null}
+              onClick={() => handleAnalyze("monthly")}
+            />
+            <ModeButton
+              icon={<TrendingDown className="h-4 w-4" />}
+              label={STATS_MODE_LABELS.drop}
+              active={activeMode === "drop" && !!analyses.drop}
+              loading={analyzingMode === "drop"}
+              disabled={analyzingMode !== null}
+              onClick={() => handleAnalyze("drop")}
+            />
+          </div>
+        </section>
+      )}
 
       {refreshError && (
         <p className="text-sm text-destructive rounded-lg bg-destructive/10 px-3 py-2">
@@ -277,14 +333,15 @@ function StatsPage() {
         </p>
       )}
 
-      {analysis && (
+      {analyses[activeMode] && (
         <section className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-7 space-y-5">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] opacity-65">
-            <Sparkles className="h-3.5 w-3.5" /> Lecture stratégique
+            <Sparkles className="h-3.5 w-3.5" />{" "}
+            {STATS_MODE_LABELS[activeMode]}
           </div>
-          <MarkdownLite text={analysis} />
+          <MarkdownLite text={analyses[activeMode]!} />
           <SuggestionsBlock
-            text={analysis}
+            text={analyses[activeMode]!}
             addedIdeas={addedIdeas}
             onAdd={handleAddIdea}
             onGoToIdeas={() => navigate({ to: "/idees" })}
@@ -292,6 +349,39 @@ function StatsPage() {
         </section>
       )}
     </div>
+  );
+}
+
+function ModeButton({
+  icon,
+  label,
+  active,
+  loading,
+  disabled,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  loading: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex items-start gap-2.5 text-left rounded-xl border px-3.5 py-3 text-sm transition-all disabled:opacity-50 ${
+        active
+          ? "border-primary bg-primary/10 text-primary"
+          : "border-border bg-card hover:bg-muted"
+      }`}
+    >
+      <span className={`mt-0.5 shrink-0 ${active ? "text-primary" : "opacity-70"}`}>
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : icon}
+      </span>
+      <span className="leading-snug">{label}</span>
+    </button>
   );
 }
 

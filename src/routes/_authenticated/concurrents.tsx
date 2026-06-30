@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/concurrents")({
-  head: () => ({ meta: [{ title: "Concurrents — Cockpit" }] }),
+  head: () => ({ meta: [{ title: "Veille stratégique — Cockpit" }] }),
   component: CompetitorsPage,
 });
 
@@ -262,11 +262,9 @@ function CompetitorsPage() {
         <p className="text-xs uppercase tracking-[0.2em] opacity-60">
           Le paysage
         </p>
-        <h1 className="text-5xl">Concurrents</h1>
+        <h1 className="text-5xl">Veille stratégique</h1>
         <p className="text-base opacity-75 max-w-2xl">
-          <em>
-            Gardez un œil attentif sur les comptes qui inspirent ou défient.
-          </em>
+          Gardez un œil attentif sur les comptes qui inspirent ou défient.
         </p>
       </header>
 
