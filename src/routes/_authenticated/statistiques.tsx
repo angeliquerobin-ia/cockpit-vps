@@ -333,14 +333,15 @@ function StatsPage() {
         </p>
       )}
 
-      {analysis && (
+      {analyses[activeMode] && (
         <section className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-7 space-y-5">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] opacity-65">
-            <Sparkles className="h-3.5 w-3.5" /> Lecture stratégique
+            <Sparkles className="h-3.5 w-3.5" />{" "}
+            {STATS_MODE_LABELS[activeMode]}
           </div>
-          <MarkdownLite text={analysis} />
+          <MarkdownLite text={analyses[activeMode]!} />
           <SuggestionsBlock
-            text={analysis}
+            text={analyses[activeMode]!}
             addedIdeas={addedIdeas}
             onAdd={handleAddIdea}
             onGoToIdeas={() => navigate({ to: "/idees" })}
@@ -348,6 +349,39 @@ function StatsPage() {
         </section>
       )}
     </div>
+  );
+}
+
+function ModeButton({
+  icon,
+  label,
+  active,
+  loading,
+  disabled,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  loading: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex items-start gap-2.5 text-left rounded-xl border px-3.5 py-3 text-sm transition-all disabled:opacity-50 ${
+        active
+          ? "border-primary bg-primary/10 text-primary"
+          : "border-border bg-card hover:bg-muted"
+      }`}
+    >
+      <span className={`mt-0.5 shrink-0 ${active ? "text-primary" : "opacity-70"}`}>
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : icon}
+      </span>
+      <span className="leading-snug">{label}</span>
+    </button>
   );
 }
 
