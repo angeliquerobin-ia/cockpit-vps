@@ -464,6 +464,59 @@ function ReglagesPage() {
         </div>
       </Section>
 
+      {/* 3bis. Consigne d'analyse statistiques */}
+      <Section
+        icon={<BarChart3 className="h-5 w-5 text-primary" />}
+        title="Consigne d'analyse des statistiques"
+        subtitle="La trame que l'agent suit quand vous cliquez sur « Analyser mes performances » dans l'espace Statistiques. Modifiable pour ajuster le ton, les sections, ou ce que vous voulez en sortie."
+      >
+        <div className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-5 space-y-3">
+          <div className="flex items-center justify-end gap-3 flex-wrap">
+            {savedAt["stats_prompt"] &&
+              Date.now() - savedAt["stats_prompt"] < 2500 && (
+                <span className="text-xs opacity-60">Enregistré</span>
+              )}
+            <button
+              type="button"
+              onClick={() =>
+                setSettings((s) => ({ ...s, stats_prompt: DEFAULT_STATS_PROMPT }))
+              }
+              className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs hover:opacity-80"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Restaurer la consigne par défaut
+            </button>
+            <button
+              onClick={() =>
+                saveSettings(
+                  { stats_prompt: settings.stats_prompt },
+                  "stats_prompt",
+                )
+              }
+              disabled={saving === "stats_prompt"}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              <Save className="h-3.5 w-3.5" />
+              {saving === "stats_prompt" ? "…" : "Enregistrer"}
+            </button>
+          </div>
+          <textarea
+            value={settings.stats_prompt}
+            onChange={(e) =>
+              setSettings((s) => ({ ...s, stats_prompt: e.target.value }))
+            }
+            rows={18}
+            placeholder={DEFAULT_STATS_PROMPT}
+            className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-ring resize-y font-mono"
+          />
+          <p className="text-xs opacity-60">
+            Laissé vide, la consigne par défaut est utilisée. Les modes
+            spécialisés (accroches, matrice, rapport mensuel, analyse de
+            chute) gardent leur propre trame.
+          </p>
+        </div>
+      </Section>
+
       {/* 4. Webhooks N8N */}
       <Section
         icon={<Webhook className="h-5 w-5 text-primary" />}
