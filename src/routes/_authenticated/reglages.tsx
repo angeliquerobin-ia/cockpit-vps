@@ -790,3 +790,332 @@ function Switch({
     </button>
   );
 }
+
+// ============================================================
+// Éditeur des fournisseurs d'IA
+// ============================================================
+
+type ProviderDraft = {
+  id: string | null;
+  name: string;
+  endpoint: string;
+  api_key: string;
+  models_text: string;
+};
+
+const EMPTY_DRAFT: ProviderDraft = {
+  id: null,
+  name: "",
+  endpoint: "https://openrouter.ai/api/v1",
+  api_key: "",
+  models_text: "",
+};
+
+function AiProvidersEditor({
+  providers,
+  onSave,
+  onDelete,
+}: {
+  providers: AiProvider[];
+  onSave: (p: {
+    id: string | null;
+    name: string;
+    endpoint: string;
+    api_key: string;
+    models: string[];
+  }) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const [draft, setDraft] = useState<ProviderDraft>(EMPTY_DRAFT);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function loadFor(p: AiProvider) {
+    setDraft({
+      id: p.id,
+      name: p.name,
+      endpoint: p.endpoint,
+      api_key: "",
+      models_text: p.models.join("\n"),
+    });
+    setError(null);
+  }
+
+  async function save() {
+    setError(null);
+    setBusy(true);
+    try {
+      const models = draft.models_text
+        .split(/\r?\n|,/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      await onSave({
+        id: draft.id,
+        name: draft.name.trim(),
+        endpoint: draft.endpoint.trim(),
+        api_key: draft.api_key.trim(),
+        models,
+      });
+      setDraft(EMPTY_DRAFT);
+    } catch (e: any) {
+      setError(e?.message ?? "Impossible d'enregistrer ce fournisseur.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {providers.length > 0 && (
+        <div className="bg-card rounded-2xl shadow-[var(--shadow-soft)] divide-y divide-border">
+          {providers.map((p) => (
+            <div
+              key={p.id}
+              className="flex flex-wrap items-start justify-between gap-3 p-4"
+            >
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-lg">{p.name}</span>
+                  {p.has_key && (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                      <Check className="h-3 w-3" /> clé enregistrée
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs opacity-70 font-mono break-all">
+                  {p.endpoint}
+                </p>
+                {p.models.length > 0 && (
+                  <p className="text-xs opacity-80">
+                    Modèles :{" "}
+                    <span className="font-mono">{p.models.join(", ")}</span>
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => loadFor(p)}
+                  className="inline-flex items-center gap-1 rounded-lg bg-muted px-3 py-1.5 text-xs hover:opacity-80"
+                >
+                  Modifier
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      confirm(
+                        `Supprimer le fournisseur « ${p.name} » ? Les fonctions qui l'utilisent retomberont sur le fournisseur par défaut.`,
+                      )
+                    ) {
+                      onDelete(p.id).catch(() => {});
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg bg-destructive/10 text-destructive px-3 py-1.5 text-xs hover:bg-destructive/20"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-card rounded-2xl shadow-[var(--shadow-soft)] p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Plus className="h-4 w-4 text-primary" />
+          <h3 className="text-xl">
+            {draft.id ? "Modifier ce fournisseur" : "Ajouter un fournisseur"}
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="space-y-1 text-sm">
+            <span className="opacity-80">Nom</span>
+            <input
+              type="text"
+              value={draft.name}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, name: e.target.value }))
+              }
+              placeholder="OpenRouter, OpenAI, Groq…"
+              className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </label>
+          <label className="space-y-1 text-sm">
+            <span className="opacity-80">
+              Adresse du point d'accès (compatible OpenAI)
+            </span>
+            <input
+              type="url"
+              value={draft.endpoint}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, endpoint: e.target.value }))
+              }
+              placeholder="https://openrouter.ai/api/v1"
+              className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </label>
+        </div>
+        <label className="space-y-1 text-sm block">
+          <span className="opacity-80">
+            Clé API{" "}
+            {draft.id && (
+              <span className="opacity-60">
+                (laissez vide pour conserver la clé actuelle)
+              </span>
+            )}
+          </span>
+          <input
+            type="password"
+            autoComplete="off"
+            value={draft.api_key}
+            onChange={(e) =>
+              setDraft((d) => ({ ...d, api_key: e.target.value }))
+            }
+            placeholder="sk-…"
+            className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="space-y-1 text-sm block">
+          <span className="opacity-80">
+            Modèles disponibles (un par ligne, ou séparés par des virgules)
+          </span>
+          <textarea
+            value={draft.models_text}
+            onChange={(e) =>
+              setDraft((d) => ({ ...d, models_text: e.target.value }))
+            }
+            rows={4}
+            placeholder={"openai/gpt-5\ngoogle/gemini-2.5-pro\nanthropic/claude-3.5-sonnet"}
+            className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+          />
+        </label>
+        {error && (
+          <p className="text-sm text-destructive flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" /> {error}
+          </p>
+        )}
+        <div className="flex items-center justify-end gap-2">
+          {draft.id && (
+            <button
+              type="button"
+              onClick={() => setDraft(EMPTY_DRAFT)}
+              className="rounded-lg bg-muted px-3 py-1.5 text-sm hover:opacity-80"
+            >
+              Annuler
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={save}
+            disabled={
+              busy ||
+              !draft.name.trim() ||
+              !draft.endpoint.trim() ||
+              (!draft.id && !draft.api_key.trim())
+            }
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50"
+          >
+            <Save className="h-3.5 w-3.5" />
+            {busy ? "…" : draft.id ? "Enregistrer" : "Ajouter"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Éditeur du routage fonction → fournisseur/modèle
+// ============================================================
+
+function AiRoutesEditor({
+  providers,
+  routes,
+  onChange,
+}: {
+  providers: AiProvider[];
+  routes: AiRoute[];
+  onChange: (
+    fk: AiFunctionKey,
+    providerId: string | null,
+    model: string | null,
+  ) => Promise<void>;
+}) {
+  const routeByKey = useMemo(() => {
+    const m = new Map<AiFunctionKey, AiRoute>();
+    for (const r of routes) m.set(r.function_key, r);
+    return m;
+  }, [routes]);
+
+  if (providers.length === 0) {
+    return (
+      <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 flex gap-3">
+        <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+        <p className="text-sm leading-relaxed opacity-85">
+          Ajoutez d'abord un fournisseur d'IA ci-dessus pour pouvoir attribuer
+          un modèle à chaque fonction. En attendant, les fonctions utilisent le
+          fournisseur par défaut de l'app.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-card rounded-2xl shadow-[var(--shadow-soft)] divide-y divide-border">
+      {AI_FUNCTION_KEYS.map((fk) => {
+        const current = routeByKey.get(fk);
+        const value = current
+          ? `${current.provider_id}::${current.model}`
+          : "";
+        return (
+          <div key={fk} className="p-4 space-y-1.5">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-base">{AI_FUNCTION_LABELS[fk]}</p>
+                <p className="text-xs opacity-65 max-w-xl">
+                  {AI_FUNCTION_DESCRIPTIONS[fk]}
+                </p>
+              </div>
+              <select
+                value={value}
+                onChange={async (e) => {
+                  const v = e.target.value;
+                  if (!v) {
+                    await onChange(fk, null, null);
+                    return;
+                  }
+                  const [pid, ...modelParts] = v.split("::");
+                  await onChange(fk, pid, modelParts.join("::"));
+                }}
+                className="rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring min-w-[280px]"
+              >
+                <option value="">— Fournisseur par défaut —</option>
+                {providers.map((p) =>
+                  p.models.length === 0 ? (
+                    <option
+                      key={`${p.id}-empty`}
+                      value=""
+                      disabled
+                    >
+                      {p.name} (aucun modèle configuré)
+                    </option>
+                  ) : (
+                    <optgroup key={p.id} label={p.name}>
+                      {p.models.map((m) => (
+                        <option key={`${p.id}::${m}`} value={`${p.id}::${m}`}>
+                          {m}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ),
+                )}
+              </select>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
