@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { generateText } from "ai";
-import { createOpenRouterProvider } from "./openrouter-provider.server";
+import { resolveAiModel } from "./ai-router.server";
 import { CHANNEL_LABELS } from "./channel-prompts";
 import {
   DEFAULT_STATS_PROMPT,
@@ -66,8 +66,6 @@ export const analyzePerformance = createServerFn({ method: "POST" })
     return { mode };
   })
   .handler(async ({ context, data }) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
     const { supabase, userId } = context;
     const mode = data.mode;
 
@@ -214,9 +212,9 @@ export const analyzePerformance = createServerFn({ method: "POST" })
         ? customStatsPrompt || DEFAULT_STATS_PROMPT
         : STATS_MODE_PROMPTS[mode].system;
 
-    const openrouter = createOpenRouterProvider(apiKey);
+    const model = await resolveAiModel(userId, "stats");
     const { text } = await generateText({
-      model: openrouter("openai/gpt-5"),
+      model,
       system,
       prompt: `${block}\n\n${stratText ? `## Ma ligne éditoriale\n${stratText}\n\n` : ""}## Tâche\nAnalyse les données ci-dessus selon la trame qui t'a été donnée. Reste concise, factuelle, et n'invente jamais un chiffre.`,
     });

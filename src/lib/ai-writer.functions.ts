@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createOpenRouterProvider } from "./openrouter-provider.server";
+import { resolveAiModel } from "./ai-router.server";
 import { DEFAULT_CHANNEL_PROMPTS, CHANNEL_LABELS } from "./channel-prompts";
 
 const InputSchema = z.object({
@@ -60,9 +60,6 @@ export const aiWrite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
-
     const { supabase, userId } = context;
 
     // Fetch context in parallel
@@ -125,8 +122,7 @@ export const aiWrite = createServerFn({ method: "POST" })
     const action =
       ACTION_INSTRUCTIONS[data.mode] ?? ACTION_INSTRUCTIONS.generate;
 
-    const openrouter = createOpenRouterProvider(apiKey);
-    const model = openrouter("openai/gpt-5");
+    const model = await resolveAiModel(userId, "writer");
 
     // Mode "spellcheck" : on court-circuite tout le contexte canal/pilier/stratégie
     // pour ne pas tenter de reformuler. On corrige uniquement la matière fournie.
@@ -161,9 +157,6 @@ export const aiSuggestIdeas = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SuggestInputSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
-
     const { supabase, userId } = context;
     const [stratRes, pillarsRes] = await Promise.all([
       supabase
@@ -204,8 +197,7 @@ export const aiSuggestIdeas = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n\n");
 
-    const openrouter = createOpenRouterProvider(apiKey);
-    const model = openrouter("openai/gpt-5");
+    const model = await resolveAiModel(userId, "ideas");
 
     const result = await generateText({
       model,
@@ -249,8 +241,6 @@ export const aiSplitIdeas = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => SplitSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
     const { supabase, userId } = context;
 
     const { data: pillarsData } = await supabase
@@ -270,9 +260,9 @@ export const aiSplitIdeas = createServerFn({ method: "POST" })
           .join("\n")
       : "_Aucun pilier défini._";
 
-    const openrouter = createOpenRouterProvider(apiKey);
+    const model = await resolveAiModel(userId, "ideas");
     const result = await generateText({
-      model: openrouter("openai/gpt-5"),
+      model,
       system:
         "Tu es une assistante éditoriale. Tu lis un texte libre contenant potentiellement plusieurs idées de contenu mélangées, et tu les scindes en idées distinctes. Tu réponds STRICTEMENT en JSON valide, sans texte hors JSON, sans bloc de code markdown.",
       prompt: `## Piliers de contenu disponibles\n${pillarsBlock}\n\n## Texte à scinder\n${data.text.trim()}\n\n---\n\n## Tâche\nIdentifie chaque idée distincte présente dans ce texte. Pour chacune, propose un titre court et incarné (max 90 caractères) et, si pertinent, un angle court (1 phrase qui précise la promesse, fidèle au texte original — n'invente rien si ce n'est pas dans le texte). Associe le nom du pilier le plus pertinent parmi ceux listés (champ "pillar_name", exactement comme écrit, ou null). Ne fusionne pas, ne reformule pas l'intention, garde la voix d'origine.\n\nRenvoie uniquement un JSON de la forme :\n{"ideas":[{"title":"...","angle":"...","pillar_name":"..."}]}`,
@@ -320,8 +310,6 @@ export const aiDeriveForChannel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => DeriveSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
     const { supabase, userId } = context;
 
     const { data: source, error: srcErr } = await supabase
@@ -387,9 +375,9 @@ export const aiDeriveForChannel = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n\n");
 
-    const openrouter = createOpenRouterProvider(apiKey);
+    const model = await resolveAiModel(userId, "writer");
     const { text } = await generateText({
-      model: openrouter("openai/gpt-5"),
+      model,
       system:
         "Tu es l'agent de rédaction d'une coach. Tu écris en français. Tu adaptes un post à un autre canal en respectant strictement la consigne du canal cible (longueur, ton, format, structure). Ne traduis pas mot à mot : repense l'angle, l'accroche, le rythme et la chute pour qu'ils soient natifs au canal cible. Ne commente jamais ton travail, renvoie uniquement le texte du nouveau post (sans titre, sans guillemets, sans préambule).",
       prompt: `${contextBlock}\n\n---\n\n## Tâche\nDécline ce post pour le canal cible. Garde l'intention et le pilier. Adapte le format, la longueur, le ton et la structure aux usages du canal cible et à sa consigne de rédaction.`,
@@ -436,9 +424,11 @@ export const aiOcrImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => OcrSchema.parse(d))
   .handler(async ({ data }) => {
+    // OCR : conserve un modèle vision côté OpenRouter (non exposé aux réglages
+    // utilisateur, puisque la retranscription est une brique technique).
+    const { createOpenRouterProvider } = await import("./openrouter-provider.server");
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
-
     const openrouter = createOpenRouterProvider(apiKey);
     const model = openrouter("google/gemini-2.5-flash");
 

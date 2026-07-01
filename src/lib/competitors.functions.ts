@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createOpenRouterProvider } from "./openrouter-provider.server";
+import { resolveAiModel } from "./ai-router.server";
 import { CHANNEL_LABELS } from "./channel-prompts";
 
 export const refreshCompetitors = createServerFn({ method: "POST" })
@@ -97,8 +97,6 @@ export const refreshCompetitors = createServerFn({ method: "POST" })
 export const analyzeCompetitorsMetrics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
     const { supabase, userId } = context;
 
     const [competitorsRes, metricsRes, selfRes, stratRes] = await Promise.all([
@@ -152,9 +150,9 @@ export const analyzeCompetitorsMetrics = createServerFn({ method: "POST" })
         ? (stratRes.data as any).content
         : "";
 
-    const openrouter = createOpenRouterProvider(apiKey);
+    const model = await resolveAiModel(userId, "competitors");
     const { text } = await generateText({
-      model: openrouter("openai/gpt-5"),
+      model,
       system:
         "Tu es l'analyste de la coach. Tu écris en français, en prose claire et incarnée (Markdown autorisé : titres ##, gras, listes). Pas de chiffres inventés : appuie-toi uniquement sur les données fournies.",
       prompt: `Voici les métriques comparatives :\n\n${block}\n\n${stratText ? `## Ligne éditoriale\n${stratText}\n\n` : ""}## Tâche\nRédige une analyse synthétique :\n1. Où je me situe globalement.\n2. Sur quels indicateurs un concurrent me devance (et lequel).\n3. Sur quels indicateurs je devance.\n4. Ce que ça suggère concrètement (2-4 pistes d'action).\nReste concis (250-400 mots).`,
@@ -173,8 +171,6 @@ export const analyzeCompetitorsContent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ContentInput.parse(d))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
     const { supabase, userId } = context;
 
     const [settingsRes, competitorsRes, stratRes] = await Promise.all([
@@ -253,9 +249,9 @@ export const analyzeCompetitorsContent = createServerFn({ method: "POST" })
       })
       .join("\n\n");
 
-    const openrouter = createOpenRouterProvider(apiKey);
+    const model = await resolveAiModel(userId, "competitors");
     const { text } = await generateText({
-      model: openrouter("openai/gpt-5"),
+      model,
       system:
         "Tu es l'analyste éditoriale de la coach. Français, ton incarné, Markdown autorisé. Reste fidèle aux posts fournis, n'invente rien.",
       prompt: `## Posts récents des concurrents\n${corpus}\n\n${stratText ? `## Ma ligne éditoriale\n${stratText}\n\n` : ""}## Tâche\nProduis une analyse structurée en Markdown :\n\n## Thèmes récurrents\n(liste à puces)\n\n## Accroches qui reviennent\n(2-4 patterns observés, avec exemple court)\n\n## Formats qui semblent fonctionner\n(liste à puces)\n\n## Rythme de publication\n(estimation par concurrent)\n\n## Pistes pour moi\nTermine par exactement 4 à 6 pistes concrètes, chacune sur sa propre ligne, formatées ainsi (sans rien d'autre sur la ligne) :\n- PISTE: <titre court> — <pourquoi c'est intéressant pour moi en une phrase>\n\nLes lignes "- PISTE:" doivent être parfaitement reconnaissables pour être extraites par l'app.`,
