@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { generateText } from "ai";
 import { z } from "zod";
-import { createOpenRouterProvider } from "./openrouter-provider.server";
+import { resolveAiModel } from "./ai-router.server";
 import { CHANNEL_LABELS } from "./channel-prompts";
 
 export const refreshCompetitors = createServerFn({ method: "POST" })
