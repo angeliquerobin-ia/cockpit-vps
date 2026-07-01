@@ -1,21 +1,13 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { LanguageModel } from "ai";
+import type { AiFunctionKey } from "./ai-router.shared";
 
-export type AiFunctionKey = "writer" | "ideas" | "stats" | "competitors";
-
-export const AI_FUNCTION_LABELS: Record<AiFunctionKey, string> = {
-  writer: "Agent de rédaction (posts)",
-  ideas: "Génération d'idées",
-  stats: "Analyse des statistiques",
-  competitors: "Analyse de la veille stratégique",
-};
-
-export const AI_FUNCTION_KEYS: AiFunctionKey[] = [
-  "writer",
-  "ideas",
-  "stats",
-  "competitors",
-];
+export type { AiFunctionKey } from "./ai-router.shared";
+export {
+  AI_FUNCTION_KEYS,
+  AI_FUNCTION_LABELS,
+  AI_FUNCTION_DESCRIPTIONS,
+} from "./ai-router.shared";
 
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1";
 
