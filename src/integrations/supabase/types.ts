@@ -14,6 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_function_routes: {
+        Row: {
+          function_key: string
+          model: string
+          provider_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          function_key: string
+          model: string
+          provider_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          function_key?: string
+          model?: string
+          provider_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_function_routes_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "ai_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_providers: {
+        Row: {
+          api_key: string
+          created_at: string
+          endpoint: string
+          id: string
+          models: string[]
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          models?: string[]
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          models?: string[]
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       channel_prompts: {
         Row: {
           channel: Database["public"]["Enums"]["pillar_channel"]
