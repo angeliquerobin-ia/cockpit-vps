@@ -212,9 +212,9 @@ export const analyzePerformance = createServerFn({ method: "POST" })
         ? customStatsPrompt || DEFAULT_STATS_PROMPT
         : STATS_MODE_PROMPTS[mode].system;
 
-    const openrouter = createOpenRouterProvider(apiKey);
+    const model = await resolveAiModel(userId, "stats");
     const { text } = await generateText({
-      model: openrouter("openai/gpt-5"),
+      model,
       system,
       prompt: `${block}\n\n${stratText ? `## Ma ligne éditoriale\n${stratText}\n\n` : ""}## Tâche\nAnalyse les données ci-dessus selon la trame qui t'a été donnée. Reste concise, factuelle, et n'invente jamais un chiffre.`,
     });
