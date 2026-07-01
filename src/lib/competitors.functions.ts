@@ -249,9 +249,9 @@ export const analyzeCompetitorsContent = createServerFn({ method: "POST" })
       })
       .join("\n\n");
 
-    const openrouter = createOpenRouterProvider(apiKey);
+    const model = await resolveAiModel(userId, "competitors");
     const { text } = await generateText({
-      model: openrouter("openai/gpt-5"),
+      model,
       system:
         "Tu es l'analyste éditoriale de la coach. Français, ton incarné, Markdown autorisé. Reste fidèle aux posts fournis, n'invente rien.",
       prompt: `## Posts récents des concurrents\n${corpus}\n\n${stratText ? `## Ma ligne éditoriale\n${stratText}\n\n` : ""}## Tâche\nProduis une analyse structurée en Markdown :\n\n## Thèmes récurrents\n(liste à puces)\n\n## Accroches qui reviennent\n(2-4 patterns observés, avec exemple court)\n\n## Formats qui semblent fonctionner\n(liste à puces)\n\n## Rythme de publication\n(estimation par concurrent)\n\n## Pistes pour moi\nTermine par exactement 4 à 6 pistes concrètes, chacune sur sa propre ligne, formatées ainsi (sans rien d'autre sur la ligne) :\n- PISTE: <titre court> — <pourquoi c'est intéressant pour moi en une phrase>\n\nLes lignes "- PISTE:" doivent être parfaitement reconnaissables pour être extraites par l'app.`,
