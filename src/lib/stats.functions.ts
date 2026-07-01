@@ -66,8 +66,6 @@ export const analyzePerformance = createServerFn({ method: "POST" })
     return { mode };
   })
   .handler(async ({ context, data }) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
     const { supabase, userId } = context;
     const mode = data.mode;
 
