@@ -557,6 +557,46 @@ function ReglagesPage() {
         </div>
       </Section>
 
+      {/* 3ter. Fournisseurs & routage des modèles */}
+      <Section
+        icon={<KeyRound className="h-5 w-5 text-primary" />}
+        title="Fournisseurs d'IA"
+        subtitle="Branchez librement OpenAI, OpenRouter, ou tout autre fournisseur compatible OpenAI. Ajoutez, modifiez, ou supprimez à tout moment. Les clés API sont stockées côté serveur et jamais exposées au navigateur."
+      >
+        <AiProvidersEditor
+          providers={providers}
+          onSave={async (p) => {
+            await fnUpsertProvider({ data: p });
+            await reloadAi();
+          }}
+          onDelete={async (id) => {
+            await fnDeleteProvider({ data: { id } });
+            await reloadAi();
+          }}
+        />
+      </Section>
+
+      <Section
+        icon={<Cpu className="h-5 w-5 text-primary" />}
+        title="Modèle par fonction"
+        subtitle="Attribuez à chaque fonction IA de l'app le fournisseur et le modèle de votre choix. Modifiable à tout moment."
+      >
+        <AiRoutesEditor
+          providers={providers}
+          routes={routes}
+          onChange={async (fk, providerId, model) => {
+            await fnSetRoute({
+              data: {
+                function_key: fk,
+                provider_id: providerId,
+                model,
+              },
+            });
+            await reloadAi();
+          }}
+        />
+      </Section>
+
       {/* 4. Webhooks N8N */}
       <Section
         icon={<Webhook className="h-5 w-5 text-primary" />}
