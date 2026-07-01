@@ -424,9 +424,11 @@ export const aiOcrImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => OcrSchema.parse(d))
   .handler(async ({ data }) => {
+    // OCR : conserve un modèle vision côté OpenRouter (non exposé aux réglages
+    // utilisateur, puisque la retranscription est une brique technique).
+    const { createOpenRouterProvider } = await import("./openrouter-provider.server");
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
-
     const openrouter = createOpenRouterProvider(apiKey);
     const model = openrouter("google/gemini-2.5-flash");
 
