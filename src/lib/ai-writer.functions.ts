@@ -197,8 +197,7 @@ export const aiSuggestIdeas = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n\n");
 
-    const openrouter = createOpenRouterProvider(apiKey);
-    const model = openrouter("openai/gpt-5");
+    const model = await resolveAiModel(userId, "ideas");
 
     const result = await generateText({
       model,
