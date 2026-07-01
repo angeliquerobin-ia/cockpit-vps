@@ -60,9 +60,6 @@ export const aiWrite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
-
     const { supabase, userId } = context;
 
     // Fetch context in parallel
