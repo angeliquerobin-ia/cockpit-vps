@@ -148,9 +148,29 @@ function ReglagesPage() {
   const [postsThisMonth, setPostsThisMonth] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
+  const [providers, setProviders] = useState<AiProvider[]>([]);
+  const [routes, setRoutes] = useState<AiRoute[]>([]);
+  const fnListProviders = useServerFn(listAiProviders);
+  const fnListRoutes = useServerFn(listAiRoutes);
+  const fnUpsertProvider = useServerFn(upsertAiProvider);
+  const fnDeleteProvider = useServerFn(deleteAiProvider);
+  const fnSetRoute = useServerFn(setAiRoute);
+
+  async function reloadAi() {
+    const [p, r] = await Promise.all([fnListProviders(), fnListRoutes()]);
+    setProviders(p);
+    setRoutes(r);
+  }
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    reloadAi().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) return;
