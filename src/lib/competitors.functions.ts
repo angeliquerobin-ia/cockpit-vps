@@ -150,9 +150,9 @@ export const analyzeCompetitorsMetrics = createServerFn({ method: "POST" })
         ? (stratRes.data as any).content
         : "";
 
-    const openrouter = createOpenRouterProvider(apiKey);
+    const model = await resolveAiModel(userId, "competitors");
     const { text } = await generateText({
-      model: openrouter("openai/gpt-5"),
+      model,
       system:
         "Tu es l'analyste de la coach. Tu écris en français, en prose claire et incarnée (Markdown autorisé : titres ##, gras, listes). Pas de chiffres inventés : appuie-toi uniquement sur les données fournies.",
       prompt: `Voici les métriques comparatives :\n\n${block}\n\n${stratText ? `## Ligne éditoriale\n${stratText}\n\n` : ""}## Tâche\nRédige une analyse synthétique :\n1. Où je me situe globalement.\n2. Sur quels indicateurs un concurrent me devance (et lequel).\n3. Sur quels indicateurs je devance.\n4. Ce que ça suggère concrètement (2-4 pistes d'action).\nReste concis (250-400 mots).`,
