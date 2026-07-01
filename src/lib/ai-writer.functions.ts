@@ -122,8 +122,7 @@ export const aiWrite = createServerFn({ method: "POST" })
     const action =
       ACTION_INSTRUCTIONS[data.mode] ?? ACTION_INSTRUCTIONS.generate;
 
-    const openrouter = createOpenRouterProvider(apiKey);
-    const model = openrouter("openai/gpt-5");
+    const model = await resolveAiModel(userId, "writer");
 
     // Mode "spellcheck" : on court-circuite tout le contexte canal/pilier/stratégie
     // pour ne pas tenter de reformuler. On corrige uniquement la matière fournie.
