@@ -310,8 +310,6 @@ export const aiDeriveForChannel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => DeriveSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
     const { supabase, userId } = context;
 
     const { data: source, error: srcErr } = await supabase
