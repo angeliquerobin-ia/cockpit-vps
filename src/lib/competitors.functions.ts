@@ -97,8 +97,6 @@ export const refreshCompetitors = createServerFn({ method: "POST" })
 export const analyzeCompetitorsMetrics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error("OPENROUTER_API_KEY manquant");
     const { supabase, userId } = context;
 
     const [competitorsRes, metricsRes, selfRes, stratRes] = await Promise.all([
