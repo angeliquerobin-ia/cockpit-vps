@@ -1,12 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ALL_CHANNELS,
   CHANNEL_LABELS,
   DEFAULT_CHANNEL_PROMPTS,
 } from "@/lib/channel-prompts";
 import { DEFAULT_STATS_PROMPT } from "@/lib/stats-prompts";
+import {
+  AI_FUNCTION_KEYS,
+  AI_FUNCTION_LABELS,
+  AI_FUNCTION_DESCRIPTIONS,
+  type AiFunctionKey,
+} from "@/lib/ai-router.shared";
+import {
+  listAiProviders,
+  upsertAiProvider,
+  deleteAiProvider,
+  listAiRoutes,
+  setAiRoute,
+  type AiProvider,
+  type AiRoute,
+} from "@/lib/ai-settings.functions";
 import {
   Save,
   Sparkles,
@@ -18,6 +34,10 @@ import {
   Check,
   Info,
   RotateCcw,
+  Cpu,
+  Plus,
+  Trash2,
+  KeyRound,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/reglages")({
