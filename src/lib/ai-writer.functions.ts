@@ -375,9 +375,9 @@ export const aiDeriveForChannel = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n\n");
 
-    const openrouter = createOpenRouterProvider(apiKey);
+    const model = await resolveAiModel(userId, "writer");
     const { text } = await generateText({
-      model: openrouter("openai/gpt-5"),
+      model,
       system:
         "Tu es l'agent de rédaction d'une coach. Tu écris en français. Tu adaptes un post à un autre canal en respectant strictement la consigne du canal cible (longueur, ton, format, structure). Ne traduis pas mot à mot : repense l'angle, l'accroche, le rythme et la chute pour qu'ils soient natifs au canal cible. Ne commente jamais ton travail, renvoie uniquement le texte du nouveau post (sans titre, sans guillemets, sans préambule).",
       prompt: `${contextBlock}\n\n---\n\n## Tâche\nDécline ce post pour le canal cible. Garde l'intention et le pilier. Adapte le format, la longueur, le ton et la structure aux usages du canal cible et à sa consigne de rédaction.`,
