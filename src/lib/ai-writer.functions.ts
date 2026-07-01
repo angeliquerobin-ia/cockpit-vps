@@ -260,9 +260,9 @@ export const aiSplitIdeas = createServerFn({ method: "POST" })
           .join("\n")
       : "_Aucun pilier défini._";
 
-    const openrouter = createOpenRouterProvider(apiKey);
+    const model = await resolveAiModel(userId, "ideas");
     const result = await generateText({
-      model: openrouter("openai/gpt-5"),
+      model,
       system:
         "Tu es une assistante éditoriale. Tu lis un texte libre contenant potentiellement plusieurs idées de contenu mélangées, et tu les scindes en idées distinctes. Tu réponds STRICTEMENT en JSON valide, sans texte hors JSON, sans bloc de code markdown.",
       prompt: `## Piliers de contenu disponibles\n${pillarsBlock}\n\n## Texte à scinder\n${data.text.trim()}\n\n---\n\n## Tâche\nIdentifie chaque idée distincte présente dans ce texte. Pour chacune, propose un titre court et incarné (max 90 caractères) et, si pertinent, un angle court (1 phrase qui précise la promesse, fidèle au texte original — n'invente rien si ce n'est pas dans le texte). Associe le nom du pilier le plus pertinent parmi ceux listés (champ "pillar_name", exactement comme écrit, ou null). Ne fusionne pas, ne reformule pas l'intention, garde la voix d'origine.\n\nRenvoie uniquement un JSON de la forme :\n{"ideas":[{"title":"...","angle":"...","pillar_name":"..."}]}`,
