@@ -5,6 +5,7 @@ import {
   Compass,
   Lightbulb,
   Calendar,
+  CalendarClock,
   PenLine,
   Film,
   BarChart3,
@@ -19,6 +20,7 @@ import cockpitLogo from "@/assets/cockpit-logo.png.asset.json";
 const nav = [
   { to: "/strategie", label: "Stratégie", icon: Compass },
   { to: "/idees", label: "Idées", icon: Lightbulb },
+  { to: "/timing", label: "Timing Business", icon: CalendarClock },
   { to: "/calendrier", label: "Calendrier", icon: Calendar },
   { to: "/studio", label: "Studio de rédaction", icon: PenLine },
   { to: "/reels", label: "Réels", icon: Film },
@@ -27,6 +29,7 @@ const nav = [
   { to: "/corbeille", label: "Corbeille", icon: Trash2 },
   { to: "/reglages", label: "Réglages", icon: Settings },
 ] as const;
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
