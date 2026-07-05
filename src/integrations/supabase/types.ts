@@ -79,6 +79,89 @@ export type Database = {
         }
         Relationships: []
       }
+      arc_phases: {
+        Row: {
+          anchor: string
+          arc_id: string
+          created_at: string
+          id: string
+          intent: string
+          name: string
+          offset_days: number
+          position: number
+          post_count: number
+          user_id: string
+        }
+        Insert: {
+          anchor?: string
+          arc_id: string
+          created_at?: string
+          id?: string
+          intent?: string
+          name: string
+          offset_days?: number
+          position?: number
+          post_count?: number
+          user_id: string
+        }
+        Update: {
+          anchor?: string
+          arc_id?: string
+          created_at?: string
+          id?: string
+          intent?: string
+          name?: string
+          offset_days?: number
+          position?: number
+          post_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arc_phases_arc_id_fkey"
+            columns: ["arc_id"]
+            isOneToOne: false
+            referencedRelation: "content_arcs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_moments: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          kind: Database["public"]["Enums"]["business_moment_kind"]
+          notes: string
+          start_date: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["business_moment_kind"]
+          notes?: string
+          start_date: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["business_moment_kind"]
+          notes?: string
+          start_date?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       channel_prompts: {
         Row: {
           channel: Database["public"]["Enums"]["pillar_channel"]
@@ -166,6 +249,36 @@ export type Database = {
           id?: string
           name?: string
           notes?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      content_arcs: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          moment_kind: Database["public"]["Enums"]["business_moment_kind"]
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          moment_kind?: Database["public"]["Enums"]["business_moment_kind"]
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          moment_kind?: Database["public"]["Enums"]["business_moment_kind"]
+          name?: string
           updated_at?: string
           user_id?: string
         }
@@ -260,6 +373,8 @@ export type Database = {
           id: string
           idea_id: string | null
           metricool_id: string | null
+          moment_id: string | null
+          phase_name: string | null
           pillar_id: string | null
           published_at: string | null
           scheduled_at: string | null
@@ -279,6 +394,8 @@ export type Database = {
           id?: string
           idea_id?: string | null
           metricool_id?: string | null
+          moment_id?: string | null
+          phase_name?: string | null
           pillar_id?: string | null
           published_at?: string | null
           scheduled_at?: string | null
@@ -298,6 +415,8 @@ export type Database = {
           id?: string
           idea_id?: string | null
           metricool_id?: string | null
+          moment_id?: string | null
+          phase_name?: string | null
           pillar_id?: string | null
           published_at?: string | null
           scheduled_at?: string | null
@@ -315,6 +434,13 @@ export type Database = {
             columns: ["idea_id"]
             isOneToOne: false
             referencedRelation: "ideas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_moment_id_fkey"
+            columns: ["moment_id"]
+            isOneToOne: false
+            referencedRelation: "business_moments"
             referencedColumns: ["id"]
           },
           {
@@ -494,6 +620,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      business_moment_kind:
+        | "lancement"
+        | "cohorte"
+        | "vente"
+        | "evenement"
+        | "autre"
       idea_status: "brouillon" | "a_developper" | "prete"
       pillar_channel:
         | "linkedin"
@@ -630,6 +762,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      business_moment_kind: [
+        "lancement",
+        "cohorte",
+        "vente",
+        "evenement",
+        "autre",
+      ],
       idea_status: ["brouillon", "a_developper", "prete"],
       pillar_channel: [
         "linkedin",
