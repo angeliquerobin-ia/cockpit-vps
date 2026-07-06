@@ -248,6 +248,8 @@ function StudioPage() {
               pillar={p.pillar_id ? pillarById[p.pillar_id] : undefined}
               onOpen={() => navigate({ to: "/studio", search: { post: p.id } })}
               onDelete={() => removePost(p.id)}
+              onArchive={() => moveTo(p.id, "archive")}
+              onRecycle={() => moveTo(p.id, "recyclage")}
             />
           ))}
         </div>
