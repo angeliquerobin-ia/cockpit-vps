@@ -148,6 +148,12 @@ function StudioPage() {
     if (selectedId === id) navigate({ to: "/studio", search: {} });
   }
 
+  async function moveTo(id: string, dest: "archive" | "recyclage") {
+    setPosts((prev) => prev.filter((p) => p.id !== id));
+    await supabase.from("posts").update({ location: dest } as any).eq("id", id);
+    if (selectedId === id) navigate({ to: "/studio", search: {} });
+  }
+
   const filtered = posts.filter((p) => {
     if (fPillar !== "all" && p.pillar_id !== fPillar) return false;
     if (fChannel !== "all" && p.channel !== fChannel) return false;
