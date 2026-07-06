@@ -457,26 +457,30 @@ function IdeasPage() {
         </p>
       </header>
 
-      {/* Quick capture */}
-      <form
-        onSubmit={quickAdd}
-        className="bg-card rounded-2xl p-5 shadow-[var(--shadow-soft)] flex items-center gap-3"
-      >
-        <Plus className="h-5 w-5 text-primary shrink-0" />
-        <input
-          value={quickTitle}
-          onChange={(e) => setQuickTitle(e.target.value)}
-          placeholder="Une idée qui passe…"
-          className="flex-1 bg-transparent border-0 outline-none text-base placeholder:opacity-50"
-        />
-        <button
-          type="submit"
-          disabled={!quickTitle.trim()}
-          className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-40 transition-opacity"
+      {/* Quick capture — « Une nouvelle étincelle ? » */}
+      <section className="space-y-2">
+        <p className="text-xs uppercase tracking-[0.2em] opacity-60">Une nouvelle étincelle ?</p>
+        <form
+          onSubmit={quickAdd}
+          className="bg-card rounded-2xl p-3 pl-5 shadow-[var(--shadow-soft)] flex items-center gap-3"
         >
-          Ajouter
-        </button>
-      </form>
+          <Sparkles className="h-5 w-5 text-primary shrink-0" />
+          <input
+            value={quickTitle}
+            onChange={(e) => setQuickTitle(e.target.value)}
+            placeholder="Notez votre flash créatif ici…"
+            className="flex-1 min-w-0 bg-transparent border-0 outline-none text-base placeholder:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={!quickTitle.trim()}
+            aria-label="Ajouter l'idée"
+            className="h-10 w-10 shrink-0 grid place-items-center rounded-xl bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-opacity"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+        </form>
+      </section>
 
       {/* Bulk split */}
       <section className="bg-card rounded-2xl p-5 shadow-[var(--shadow-soft)] space-y-3">
