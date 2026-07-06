@@ -102,6 +102,7 @@ function StudioPage() {
         .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at,video_url")
         .eq("user_id", uid)
         .is("deleted_at", null)
+        .eq("location" as any, "creation")
         .order("updated_at", { ascending: false }),
     ]);
     setPillars((p.data ?? []) as Pillar[]);
