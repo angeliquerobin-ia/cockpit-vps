@@ -68,10 +68,8 @@ const PILLAR_COLORS = [
   "#7a8a6f",
 ];
 
-const channelLabel = (c: Channel | null) =>
-  c ? CHANNELS.find((x) => x.value === c)?.label : null;
-const statusLabel = (s: Status) =>
-  STATUSES.find((x) => x.value === s)?.label ?? s;
+const channelLabel = (c: Channel | null) => (c ? CHANNELS.find((x) => x.value === c)?.label : null);
+const statusLabel = (s: Status) => STATUSES.find((x) => x.value === s)?.label ?? s;
 
 function IdeasPage() {
   const navigate = useNavigate();
@@ -224,8 +222,7 @@ function IdeasPage() {
           (file) =>
             new Promise<{ dataUrl: string }>((resolve, reject) => {
               const reader = new FileReader();
-              reader.onload = () =>
-                resolve({ dataUrl: reader.result as string });
+              reader.onload = () => resolve({ dataUrl: reader.result as string });
               reader.onerror = () => reject(reader.error);
               reader.readAsDataURL(file);
             }),
@@ -236,9 +233,7 @@ function IdeasPage() {
       if (!extracted) {
         setSplitError("Aucun texte n'a pu être lu sur cette image.");
       } else {
-        setBulkText((prev) =>
-          prev.trim() ? `${prev.trim()}\n\n${extracted}` : extracted,
-        );
+        setBulkText((prev) => (prev.trim() ? `${prev.trim()}\n\n${extracted}` : extracted));
         setBulkOpen(true);
       }
     } catch (e: any) {
@@ -285,16 +280,12 @@ function IdeasPage() {
       .single();
     if (data) {
       setIdeas((prev) => [data as Idea, ...prev]);
-      setSuggestions((prev) =>
-        prev.map((x) => (x.key === s.key ? { ...x, added: true } : x)),
-      );
+      setSuggestions((prev) => prev.map((x) => (x.key === s.key ? { ...x, added: true } : x)));
     }
   }
 
   function updateSuggestion(key: string, patch: Partial<Suggestion>) {
-    setSuggestions((prev) =>
-      prev.map((s) => (s.key === key ? { ...s, ...patch } : s)),
-    );
+    setSuggestions((prev) => prev.map((s) => (s.key === key ? { ...s, ...patch } : s)));
   }
 
   function dismissSuggestion(key: string) {
@@ -348,20 +339,13 @@ function IdeasPage() {
   async function renamePillar(id: string, name: string) {
     const trimmed = name.trim();
     if (!trimmed) return;
-    setPillars((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, name: trimmed } : p)),
-    );
+    setPillars((prev) => prev.map((p) => (p.id === id ? { ...p, name: trimmed } : p)));
     setEditingColId(null);
-    await supabase
-      .from("content_pillars")
-      .update({ name: trimmed })
-      .eq("id", id);
+    await supabase.from("content_pillars").update({ name: trimmed }).eq("id", id);
   }
 
   async function recolorPillar(id: string, color: string) {
-    setPillars((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, color } : p)),
-    );
+    setPillars((prev) => prev.map((p) => (p.id === id ? { ...p, color } : p)));
     await supabase.from("content_pillars").update({ color }).eq("id", id);
   }
 
@@ -371,14 +355,9 @@ function IdeasPage() {
       ? `Supprimer ce pilier ? Les ${count} idée(s) associée(s) seront déplacées vers « À ranger ».`
       : "Supprimer ce pilier ?";
     if (!confirm(msg)) return;
-    setIdeas((prev) =>
-      prev.map((i) => (i.pillar_id === id ? { ...i, pillar_id: null } : i)),
-    );
+    setIdeas((prev) => prev.map((i) => (i.pillar_id === id ? { ...i, pillar_id: null } : i)));
     setPillars((prev) => prev.filter((p) => p.id !== id));
-    await supabase
-      .from("ideas")
-      .update({ pillar_id: null })
-      .eq("pillar_id", id);
+    await supabase.from("ideas").update({ pillar_id: null }).eq("pillar_id", id);
     await supabase.from("content_pillars").delete().eq("id", id);
   }
 
@@ -408,10 +387,7 @@ function IdeasPage() {
     if (id) moveIdeaTo(id, pillarId);
   }
 
-  const pillarById = useMemo(
-    () => Object.fromEntries(pillars.map((p) => [p.id, p])),
-    [pillars],
-  );
+  const pillarById = useMemo(() => Object.fromEntries(pillars.map((p) => [p.id, p])), [pillars]);
 
   const filteredIdeas = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -447,13 +423,11 @@ function IdeasPage() {
   return (
     <div className="space-y-10">
       <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.2em] opacity-60">
-          Réservoir d'inspirations
-        </p>
+        <p className="text-xs uppercase tracking-[0.2em] opacity-60">Réservoir d'inspirations</p>
         <h1 className="text-5xl">Idées</h1>
         <p className="tagline text-base max-w-2xl">
-          Capturez chaque étincelle, scindez vos braindumps en cartes, glissez-les
-          de pilier en pilier.
+          Capturez chaque étincelle, scindez vos braindumps en cartes, glissez-les de pilier en
+          pilier.
         </p>
       </header>
 
@@ -492,8 +466,8 @@ function IdeasPage() {
           <div className="flex-1">
             <h2 className="text-2xl">Scinder un texte en idées</h2>
             <p className="tagline text-sm">
-              Collez un braindump, un vocal retranscrit, une note brute — l'app
-              en extrait une carte par idée.
+              Collez un braindump, un vocal retranscrit, une note brute — l'app en extrait une carte
+              par idée.
             </p>
           </div>
           <span className="text-xs opacity-60">{bulkOpen ? "Replier" : "Ouvrir"}</span>
@@ -508,15 +482,11 @@ function IdeasPage() {
               placeholder="Collez ici un texte contenant plusieurs idées mélangées. L'agent les séparera en cartes distinctes et les rangera dans le bon pilier quand c'est évident."
               className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y leading-relaxed"
             />
-            {splitError && (
-              <p className="text-sm text-destructive">{splitError}</p>
-            )}
+            {splitError && <p className="text-sm text-destructive">{splitError}</p>}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors">
                 <ImagePlus className="h-4 w-4 text-primary" />
-                {ocrLoading
-                  ? "Retranscription en cours…"
-                  : "Ajouter une photo de texte"}
+                {ocrLoading ? "Retranscription en cours…" : "Ajouter une photo de texte"}
                 <input
                   type="file"
                   accept="image/*"
@@ -565,14 +535,12 @@ function IdeasPage() {
             <h2 className="text-2xl">Suggérer des idées</h2>
             <p className="text-sm opacity-70">
               <em>
-                L'agent IA lit votre stratégie et vos piliers, puis propose des
-                pistes à garder ou écarter.
+                L'agent IA lit votre stratégie et vos piliers, puis propose des pistes à garder ou
+                écarter.
               </em>
             </p>
           </div>
-          <span className="text-xs opacity-60">
-            {suggestOpen ? "Replier" : "Ouvrir"}
-          </span>
+          <span className="text-xs opacity-60">{suggestOpen ? "Replier" : "Ouvrir"}</span>
         </button>
 
         {suggestOpen && (
@@ -594,9 +562,7 @@ function IdeasPage() {
               </button>
             </div>
 
-            {suggestError && (
-              <p className="text-sm text-destructive">{suggestError}</p>
-            )}
+            {suggestError && <p className="text-sm text-destructive">{suggestError}</p>}
 
             {suggestions.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -615,9 +581,7 @@ function IdeasPage() {
                         <X className="h-4 w-4" />
                       </button>
                     </div>
-                    {s.angle && (
-                      <p className="text-sm opacity-80 leading-relaxed">{s.angle}</p>
-                    )}
+                    {s.angle && <p className="text-sm opacity-80 leading-relaxed">{s.angle}</p>}
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         value={s.pillar_id ?? ""}
@@ -772,9 +736,7 @@ function IdeasPage() {
                     ) : (
                       <h3 className="text-base flex-1 truncate">{col.name}</h3>
                     )}
-                    <span className="text-xs opacity-60 tabular-nums">
-                      {list.length}
-                    </span>
+                    <span className="text-xs opacity-60 tabular-nums">{list.length}</span>
                     {col.id && editingColId !== col.id && (
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
@@ -802,9 +764,7 @@ function IdeasPage() {
 
                   <div className="space-y-2 min-h-[60px]">
                     {list.length === 0 ? (
-                      <p className="text-xs opacity-50 italic px-2 py-3">
-                        Glissez une carte ici.
-                      </p>
+                      <p className="text-xs opacity-50 italic px-2 py-3">Glissez une carte ici.</p>
                     ) : (
                       list.map((idea) =>
                         editingId === idea.id ? (
@@ -822,11 +782,7 @@ function IdeasPage() {
                           <IdeaCard
                             key={idea.id}
                             idea={idea}
-                            pillar={
-                              idea.pillar_id
-                                ? pillarById[idea.pillar_id]
-                                : undefined
-                            }
+                            pillar={idea.pillar_id ? pillarById[idea.pillar_id] : undefined}
                             onDragStart={(e) => onDragStart(e, idea.id)}
                             onDragEnd={() => {
                               setDraggedId(null);
@@ -868,9 +824,7 @@ function IdeasPage() {
                     onClick={() => setNewColColor(c)}
                     aria-label={`Couleur ${c}`}
                     className={`h-6 w-6 rounded-full transition-transform ${
-                      newColColor === c
-                        ? "ring-2 ring-foreground/60 scale-110"
-                        : ""
+                      newColColor === c ? "ring-2 ring-foreground/60 scale-110" : ""
                     }`}
                     style={{ backgroundColor: c }}
                   />
@@ -885,8 +839,7 @@ function IdeasPage() {
               </button>
               <p className="text-xs opacity-60 leading-relaxed">
                 <em>
-                  Une colonne = un pilier. Vous pourrez l'éditer en détail depuis
-                  la Stratégie.
+                  Une colonne = un pilier. Vous pourrez l'éditer en détail depuis la Stratégie.
                 </em>
               </p>
             </form>
@@ -982,9 +935,7 @@ function IdeaCard({
       </div>
 
       {idea.note && (
-        <p className="text-xs opacity-70 leading-relaxed pl-6 line-clamp-3">
-          {idea.note}
-        </p>
+        <p className="text-xs opacity-70 leading-relaxed pl-6 line-clamp-3">{idea.note}</p>
       )}
 
       <div className="flex items-center gap-1.5 flex-wrap pl-6">
