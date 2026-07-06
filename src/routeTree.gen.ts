@@ -23,6 +23,7 @@ import { Route as AuthenticatedIdeesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCorbeilleRouteImport } from './routes/_authenticated/corbeille'
 import { Route as AuthenticatedConcurrentsRouteImport } from './routes/_authenticated/concurrents'
 import { Route as AuthenticatedCalendrierRouteImport } from './routes/_authenticated/calendrier'
+import { Route as AuthenticatedArchiveRouteImport } from './routes/_authenticated/archive'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -95,11 +96,17 @@ const AuthenticatedCalendrierRoute = AuthenticatedCalendrierRouteImport.update({
   path: '/calendrier',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedArchiveRoute = AuthenticatedArchiveRouteImport.update({
+  id: '/archive',
+  path: '/archive',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/archive': typeof AuthenticatedArchiveRoute
   '/calendrier': typeof AuthenticatedCalendrierRoute
   '/concurrents': typeof AuthenticatedConcurrentsRoute
   '/corbeille': typeof AuthenticatedCorbeilleRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/archive': typeof AuthenticatedArchiveRoute
   '/calendrier': typeof AuthenticatedCalendrierRoute
   '/concurrents': typeof AuthenticatedConcurrentsRoute
   '/corbeille': typeof AuthenticatedCorbeilleRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/archive': typeof AuthenticatedArchiveRoute
   '/_authenticated/calendrier': typeof AuthenticatedCalendrierRoute
   '/_authenticated/concurrents': typeof AuthenticatedConcurrentsRoute
   '/_authenticated/corbeille': typeof AuthenticatedCorbeilleRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/archive'
     | '/calendrier'
     | '/concurrents'
     | '/corbeille'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/archive'
     | '/calendrier'
     | '/concurrents'
     | '/corbeille'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/archive'
     | '/_authenticated/calendrier'
     | '/_authenticated/concurrents'
     | '/_authenticated/corbeille'
@@ -299,10 +311,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendrierRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/archive': {
+      id: '/_authenticated/archive'
+      path: '/archive'
+      fullPath: '/archive'
+      preLoaderRoute: typeof AuthenticatedArchiveRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRoute
   AuthenticatedCalendrierRoute: typeof AuthenticatedCalendrierRoute
   AuthenticatedConcurrentsRoute: typeof AuthenticatedConcurrentsRoute
   AuthenticatedCorbeilleRoute: typeof AuthenticatedCorbeilleRoute
@@ -316,6 +336,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedArchiveRoute: AuthenticatedArchiveRoute,
   AuthenticatedCalendrierRoute: AuthenticatedCalendrierRoute,
   AuthenticatedConcurrentsRoute: AuthenticatedConcurrentsRoute,
   AuthenticatedCorbeilleRoute: AuthenticatedCorbeilleRoute,
