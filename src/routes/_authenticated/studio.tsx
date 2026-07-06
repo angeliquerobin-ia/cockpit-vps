@@ -287,12 +287,17 @@ function PostCard({
   pillar,
   onOpen,
   onDelete,
+  onArchive,
+  onRecycle,
 }: {
   post: Post;
   pillar?: Pillar;
   onOpen: () => void;
   onDelete: () => void;
+  onArchive: () => void;
+  onRecycle: () => void;
 }) {
+  const [rangeOpen, setRangeOpen] = useState(false);
   const preview = post.content.trim().slice(0, 140);
   return (
     <article className="bg-card rounded-2xl shadow-[var(--shadow-soft)] overflow-hidden group">
@@ -326,7 +331,44 @@ function PostCard({
           <StatusChip status={post.status} />
         </div>
       </button>
-      <div className="px-5 pb-4 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="px-5 pb-4 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="relative">
+          <button
+            onClick={() => setRangeOpen((v) => !v)}
+            className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md hover:bg-muted text-foreground/70 text-xs"
+          >
+            <FolderInput className="h-3.5 w-3.5" /> Ranger
+          </button>
+          {rangeOpen && (
+            <>
+              <button
+                className="fixed inset-0 z-10 cursor-default"
+                onClick={() => setRangeOpen(false)}
+                aria-label="Fermer"
+              />
+              <div className="absolute right-0 bottom-full mb-1 z-20 w-56 rounded-lg bg-popover border border-border shadow-[var(--shadow-soft)] py-1">
+                <button
+                  onClick={() => {
+                    setRangeOpen(false);
+                    onArchive();
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted inline-flex items-center gap-2"
+                >
+                  <Archive className="h-4 w-4" /> Archiver
+                </button>
+                <button
+                  onClick={() => {
+                    setRangeOpen(false);
+                    onRecycle();
+                  }}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-muted inline-flex items-center gap-2"
+                >
+                  <Recycle className="h-4 w-4" /> Envoyer au recyclage
+                </button>
+              </div>
+            </>
+          )}
+        </div>
         <button
           onClick={onDelete}
           aria-label="Supprimer"
