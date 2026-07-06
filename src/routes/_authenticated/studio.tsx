@@ -60,10 +60,8 @@ const STATUSES: { value: Status; label: string }[] = [
   { value: "publie", label: "Publié" },
 ];
 
-const channelLabel = (c: Channel | null) =>
-  c ? CHANNELS.find((x) => x.value === c)?.label : null;
-const statusLabel = (s: Status) =>
-  STATUSES.find((x) => x.value === s)?.label ?? s;
+const channelLabel = (c: Channel | null) => (c ? CHANNELS.find((x) => x.value === c)?.label : null);
+const statusLabel = (s: Status) => STATUSES.find((x) => x.value === s)?.label ?? s;
 
 export const Route = createFileRoute("/_authenticated/studio")({
   head: () => ({ meta: [{ title: "Studio de rédaction — Cockpit" }] }),
@@ -99,7 +97,9 @@ function StudioPage() {
         .order("created_at", { ascending: true }),
       supabase
         .from("posts")
-        .select("id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at,video_url")
+        .select(
+          "id,title,content,channel,pillar_id,status,scheduled_at,idea_id,updated_at,video_url",
+        )
         .eq("user_id", uid)
         .is("deleted_at", null)
         .eq("location" as any, "creation")
@@ -118,10 +118,7 @@ function StudioPage() {
     setSelectedId(postParam ?? null);
   }, [postParam]);
 
-  const pillarById = useMemo(
-    () => Object.fromEntries(pillars.map((p) => [p.id, p])),
-    [pillars],
-  );
+  const pillarById = useMemo(() => Object.fromEntries(pillars.map((p) => [p.id, p])), [pillars]);
 
   async function createBlank() {
     if (!userId) return;
@@ -144,13 +141,19 @@ function StudioPage() {
   async function removePost(id: string) {
     if (!confirm("Mettre ce post à la corbeille ?")) return;
     setPosts((prev) => prev.filter((p) => p.id !== id));
-    await supabase.from("posts").update({ deleted_at: new Date().toISOString() } as any).eq("id", id);
+    await supabase
+      .from("posts")
+      .update({ deleted_at: new Date().toISOString() } as any)
+      .eq("id", id);
     if (selectedId === id) navigate({ to: "/studio", search: { post: undefined } });
   }
 
   async function moveTo(id: string, dest: "archive" | "recyclage") {
     setPosts((prev) => prev.filter((p) => p.id !== id));
-    await supabase.from("posts").update({ location: dest } as any).eq("id", id);
+    await supabase
+      .from("posts")
+      .update({ location: dest } as any)
+      .eq("id", id);
     if (selectedId === id) navigate({ to: "/studio", search: { post: undefined } });
   }
 
@@ -178,7 +181,6 @@ function StudioPage() {
       />
     );
   }
-
 
   return (
     <div className="space-y-10">
@@ -302,18 +304,13 @@ function PostCard({
   return (
     <article className="bg-card rounded-2xl shadow-[var(--shadow-soft)] overflow-hidden group">
       <div className="h-1.5" style={{ backgroundColor: pillar?.color ?? "#cdb48e" }} />
-      <button
-        onClick={onOpen}
-        className="w-full text-left p-5 space-y-3"
-      >
+      <button onClick={onOpen} className="w-full text-left p-5 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <h3 className="text-xl leading-snug flex-1">
             {post.title.trim() || <span className="opacity-50">Sans titre</span>}
           </h3>
         </div>
-        {preview && (
-          <p className="text-sm opacity-70 leading-relaxed line-clamp-2">{preview}</p>
-        )}
+        {preview && <p className="text-sm opacity-70 leading-relaxed line-clamp-2">{preview}</p>}
         <div className="flex items-center gap-2 flex-wrap pt-1">
           {pillar && (
             <span
@@ -428,7 +425,14 @@ function PostEditor({
     setDeriveError(null);
     setDeriving(target);
     try {
-      await onSave({ title, content, channel: (channel || null) as Channel | null, pillar_id: pillarId || null, status, scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null });
+      await onSave({
+        title,
+        content,
+        channel: (channel || null) as Channel | null,
+        pillar_id: pillarId || null,
+        status,
+        scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+      });
       const r = await derive({ data: { sourcePostId: post.id, targetChannel: target } });
       onRefresh();
       setDeriveOpen(false);
@@ -465,7 +469,7 @@ function PostEditor({
         >
           <ArrowLeft className="h-4 w-4" /> Tous les posts
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs opacity-60 mr-2">
             {saving === "saving" && "Enregistrement…"}
             {saving === "saved" && <em>Enregistré</em>}
@@ -474,6 +478,7 @@ function PostEditor({
             <button
               onClick={() => setDeriveOpen((v) => !v)}
               disabled={!!deriving}
+              title="Décliner sur un autre canal"
               className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted text-foreground/80 transition-colors disabled:opacity-50"
             >
               {deriving ? (
@@ -481,7 +486,7 @@ function PostEditor({
               ) : (
                 <Shuffle className="h-4 w-4" />
               )}
-              Décliner sur un autre canal
+              <span className="hidden sm:inline">Décliner sur un autre canal</span>
             </button>
             {deriveOpen && !deriving && (
               <>
@@ -504,9 +509,7 @@ function PostEditor({
                     </button>
                   ))}
                   {CHANNELS.filter((c) => c.value !== channel).length === 0 && (
-                    <p className="px-3 py-2 text-xs opacity-60">
-                      Aucun autre canal disponible.
-                    </p>
+                    <p className="px-3 py-2 text-xs opacity-60">Aucun autre canal disponible.</p>
                   )}
                 </div>
               </>
@@ -514,9 +517,11 @@ function PostEditor({
           </div>
           <button
             onClick={onDelete}
+            title="Supprimer"
             className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted text-foreground/70 transition-colors"
           >
-            <Trash2 className="h-4 w-4" /> Supprimer
+            <Trash2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Supprimer</span>
           </button>
           <button
             onClick={handleSave}
@@ -531,7 +536,9 @@ function PostEditor({
             }}
             className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 transition-opacity"
           >
-            <Send className="h-4 w-4" /> Publier ou programmer
+            <Send className="h-4 w-4" />
+            <span className="sm:hidden">Publier</span>
+            <span className="hidden sm:inline">Publier ou programmer</span>
           </button>
         </div>
       </div>
@@ -542,23 +549,19 @@ function PostEditor({
         </p>
       )}
 
-
       {showPublish && userId && (
         <PublishDialog
           post={{
             id: post.id,
             title,
             channel: (channel || null) as string | null,
-            scheduled_at: scheduledAt
-              ? new Date(scheduledAt).toISOString()
-              : null,
+            scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
           }}
           userId={userId}
           onClose={() => setShowPublish(false)}
           onPublished={({ status: s, scheduled_at }) => {
             setStatus(s as Status);
-            if (scheduled_at)
-              setScheduledAt(toLocalInput(scheduled_at));
+            if (scheduled_at) setScheduledAt(toLocalInput(scheduled_at));
             setShowPublish(false);
             onRefresh();
           }}
@@ -569,10 +572,7 @@ function PostEditor({
         {/* Main editor */}
         <div className="space-y-5">
           <div className="bg-card rounded-2xl shadow-[var(--shadow-soft)] overflow-hidden">
-            <div
-              className="h-1.5"
-              style={{ backgroundColor: pillar?.color ?? "#cdb48e" }}
-            />
+            <div className="h-1.5" style={{ backgroundColor: pillar?.color ?? "#cdb48e" }} />
             <div className="p-6 md:p-8 space-y-5">
               {post.video_url && (
                 <div className="rounded-xl overflow-hidden bg-muted/40 border border-border">
@@ -584,8 +584,8 @@ function PostEditor({
                   />
                   <p className="px-3 py-2 text-[11px] opacity-65">
                     <em>
-                      Post vidéo — la légende ci-dessous accompagnera cette
-                      vidéo lors de la publication.
+                      Post vidéo — la légende ci-dessous accompagnera cette vidéo lors de la
+                      publication.
                     </em>
                   </p>
                 </div>
@@ -604,10 +604,7 @@ function PostEditor({
                 rows={18}
                 className="w-full bg-transparent border-0 outline-none text-base leading-relaxed resize-none placeholder:opacity-40"
               />
-              <SpellCheckButton
-                content={content}
-                onCorrected={setContent}
-              />
+              <SpellCheckButton content={content} onCorrected={setContent} />
             </div>
           </div>
 
@@ -669,9 +666,7 @@ function PostEditor({
           pillarId={pillarId || null}
           currentContent={content}
           onInsert={(text) =>
-            setContent((prev) =>
-              prev.trim() ? prev.trimEnd() + "\n\n" + text : text,
-            )
+            setContent((prev) => (prev.trim() ? prev.trimEnd() + "\n\n" + text : text))
           }
         />
       </div>
@@ -702,13 +697,7 @@ const QUICK_ACTIONS: { mode: AiMode; label: string }[] = [
   { mode: "hashtags", label: "Proposer des hashtags" },
 ];
 
-type AiMode =
-  | "generate"
-  | "shorten"
-  | "rewrite_hook"
-  | "more_embodied"
-  | "add_cta"
-  | "hashtags";
+type AiMode = "generate" | "shorten" | "rewrite_hook" | "more_embodied" | "add_cta" | "hashtags";
 
 function AssistantPanel({
   channel,
@@ -756,9 +745,7 @@ function AssistantPanel({
         <Sparkles className="h-4 w-4 text-primary" />
         <h2 className="text-xl">Assistant</h2>
       </div>
-      <p className="text-xs uppercase tracking-[0.15em] opacity-60">
-        Agent de rédaction
-      </p>
+      <p className="text-xs uppercase tracking-[0.15em] opacity-60">Agent de rédaction</p>
 
       {!channelReady && (
         <p className="text-xs opacity-70 rounded-lg bg-muted/50 px-3 py-2">
@@ -767,9 +754,7 @@ function AssistantPanel({
       )}
 
       <div className="space-y-2">
-        <label className="text-xs uppercase tracking-[0.15em] opacity-70">
-          Sujet ou angle
-        </label>
+        <label className="text-xs uppercase tracking-[0.15em] opacity-70">Sujet ou angle</label>
         <textarea
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
@@ -789,9 +774,7 @@ function AssistantPanel({
 
       {(generated || busy) && (
         <div className="space-y-2">
-          <label className="text-xs uppercase tracking-[0.15em] opacity-70">
-            Texte généré
-          </label>
+          <label className="text-xs uppercase tracking-[0.15em] opacity-70">Texte généré</label>
           <textarea
             value={generated}
             onChange={(e) => setGenerated(e.target.value)}
@@ -827,9 +810,7 @@ function AssistantPanel({
       )}
 
       {error && (
-        <p className="text-xs text-destructive rounded-lg bg-destructive/10 px-3 py-2">
-          {error}
-        </p>
+        <p className="text-xs text-destructive rounded-lg bg-destructive/10 px-3 py-2">{error}</p>
       )}
     </aside>
   );
@@ -892,11 +873,11 @@ function SpellCheckButton({
         <em>Corrige les fautes sans changer vos tournures.</em>
       </span>
       {flash && (
-        <span className="text-[11px] text-primary"><em>Texte corrigé</em></span>
+        <span className="text-[11px] text-primary">
+          <em>Texte corrigé</em>
+        </span>
       )}
-      {error && (
-        <span className="text-[11px] text-destructive">{error}</span>
-      )}
+      {error && <span className="text-[11px] text-destructive">{error}</span>}
     </div>
   );
 }
