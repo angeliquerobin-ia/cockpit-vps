@@ -101,7 +101,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex bg-background">
       {/* Barre latérale — ordinateur uniquement */}
-      <aside className="hidden lg:flex print:!hidden w-64 shrink-0 bg-sidebar text-sidebar-foreground flex-col">
+      <aside className="hidden lg:flex print:hidden w-64 shrink-0 bg-sidebar text-sidebar-foreground flex-col">
         <div className="px-6 py-5 border-b border-sidebar-border flex flex-col items-center">
           <img
             src={cockpitLogo.url}
@@ -116,7 +116,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* En-tête mobile : hamburger + logo */}
-      <header className="lg:hidden print:!hidden fixed top-0 inset-x-0 z-40 bg-sidebar/95 backdrop-blur border-b border-sidebar-border flex items-center justify-between px-4 h-14">
+      <header className="lg:hidden print:hidden fixed top-0 inset-x-0 z-40 bg-sidebar/95 backdrop-blur border-b border-sidebar-border flex items-center justify-between px-4 h-14">
         <button
           onClick={() => setDrawerOpen(true)}
           aria-label="Ouvrir le menu"
@@ -176,7 +176,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
 
       {/* Navigation basse mobile (style Stitch) */}
-      <nav className="lg:hidden print:!hidden fixed bottom-0 inset-x-0 z-40 bg-sidebar/95 backdrop-blur border-t border-sidebar-border pb-[env(safe-area-inset-bottom)]">
+      <nav className="lg:hidden print:hidden fixed bottom-0 inset-x-0 z-40 bg-sidebar/95 backdrop-blur border-t border-sidebar-border pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-stretch justify-around px-2 py-1.5">
           {bottomNav.map((item) => {
             const Icon = item.icon;
