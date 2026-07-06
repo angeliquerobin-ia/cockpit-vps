@@ -14,6 +14,9 @@ import {
   Shuffle,
   Loader2,
   SpellCheck,
+  Archive,
+  Recycle,
+  FolderInput,
 } from "lucide-react";
 import { PublishDialog } from "@/components/publish-dialog";
 import { aiDeriveForChannel } from "@/lib/ai-writer.functions";
