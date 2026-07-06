@@ -19,6 +19,7 @@ import { Route as AuthenticatedStrategieRouteImport } from './routes/_authentica
 import { Route as AuthenticatedStatistiquesRouteImport } from './routes/_authenticated/statistiques'
 import { Route as AuthenticatedReglagesRouteImport } from './routes/_authenticated/reglages'
 import { Route as AuthenticatedReelsRouteImport } from './routes/_authenticated/reels'
+import { Route as AuthenticatedRecyclageRouteImport } from './routes/_authenticated/recyclage'
 import { Route as AuthenticatedIdeesRouteImport } from './routes/_authenticated/idees'
 import { Route as AuthenticatedCorbeilleRouteImport } from './routes/_authenticated/corbeille'
 import { Route as AuthenticatedConcurrentsRouteImport } from './routes/_authenticated/concurrents'
@@ -75,6 +76,11 @@ const AuthenticatedReelsRoute = AuthenticatedReelsRouteImport.update({
   path: '/reels',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRecyclageRoute = AuthenticatedRecyclageRouteImport.update({
+  id: '/recyclage',
+  path: '/recyclage',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedIdeesRoute = AuthenticatedIdeesRouteImport.update({
   id: '/idees',
   path: '/idees',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/concurrents': typeof AuthenticatedConcurrentsRoute
   '/corbeille': typeof AuthenticatedCorbeilleRoute
   '/idees': typeof AuthenticatedIdeesRoute
+  '/recyclage': typeof AuthenticatedRecyclageRoute
   '/reels': typeof AuthenticatedReelsRoute
   '/reglages': typeof AuthenticatedReglagesRoute
   '/statistiques': typeof AuthenticatedStatistiquesRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/concurrents': typeof AuthenticatedConcurrentsRoute
   '/corbeille': typeof AuthenticatedCorbeilleRoute
   '/idees': typeof AuthenticatedIdeesRoute
+  '/recyclage': typeof AuthenticatedRecyclageRoute
   '/reels': typeof AuthenticatedReelsRoute
   '/reglages': typeof AuthenticatedReglagesRoute
   '/statistiques': typeof AuthenticatedStatistiquesRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/_authenticated/concurrents': typeof AuthenticatedConcurrentsRoute
   '/_authenticated/corbeille': typeof AuthenticatedCorbeilleRoute
   '/_authenticated/idees': typeof AuthenticatedIdeesRoute
+  '/_authenticated/recyclage': typeof AuthenticatedRecyclageRoute
   '/_authenticated/reels': typeof AuthenticatedReelsRoute
   '/_authenticated/reglages': typeof AuthenticatedReglagesRoute
   '/_authenticated/statistiques': typeof AuthenticatedStatistiquesRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/concurrents'
     | '/corbeille'
     | '/idees'
+    | '/recyclage'
     | '/reels'
     | '/reglages'
     | '/statistiques'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/concurrents'
     | '/corbeille'
     | '/idees'
+    | '/recyclage'
     | '/reels'
     | '/reglages'
     | '/statistiques'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/_authenticated/concurrents'
     | '/_authenticated/corbeille'
     | '/_authenticated/idees'
+    | '/_authenticated/recyclage'
     | '/_authenticated/reels'
     | '/_authenticated/reglages'
     | '/_authenticated/statistiques'
@@ -283,6 +295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReelsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/recyclage': {
+      id: '/_authenticated/recyclage'
+      path: '/recyclage'
+      fullPath: '/recyclage'
+      preLoaderRoute: typeof AuthenticatedRecyclageRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/idees': {
       id: '/_authenticated/idees'
       path: '/idees'
@@ -327,6 +346,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedConcurrentsRoute: typeof AuthenticatedConcurrentsRoute
   AuthenticatedCorbeilleRoute: typeof AuthenticatedCorbeilleRoute
   AuthenticatedIdeesRoute: typeof AuthenticatedIdeesRoute
+  AuthenticatedRecyclageRoute: typeof AuthenticatedRecyclageRoute
   AuthenticatedReelsRoute: typeof AuthenticatedReelsRoute
   AuthenticatedReglagesRoute: typeof AuthenticatedReglagesRoute
   AuthenticatedStatistiquesRoute: typeof AuthenticatedStatistiquesRoute
@@ -341,6 +361,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConcurrentsRoute: AuthenticatedConcurrentsRoute,
   AuthenticatedCorbeilleRoute: AuthenticatedCorbeilleRoute,
   AuthenticatedIdeesRoute: AuthenticatedIdeesRoute,
+  AuthenticatedRecyclageRoute: AuthenticatedRecyclageRoute,
   AuthenticatedReelsRoute: AuthenticatedReelsRoute,
   AuthenticatedReglagesRoute: AuthenticatedReglagesRoute,
   AuthenticatedStatistiquesRoute: AuthenticatedStatistiquesRoute,
