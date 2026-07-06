@@ -55,10 +55,10 @@
   --background: #f7f3ed; /* Blanc Lin */
   --foreground: #3d2b1f; /* Marron Doux — texte courant */
 
-  --card: #faeee0; /* Crème — blocs et cartes */
+  --card: #fffdf9; /* Blanc chaud — blocs et cartes (blanc visuel, jamais #fff strict) */
   --card-foreground: #3d2b1f;
 
-  --popover: #faeee0;
+  --popover: #fffdf9;
   --popover-foreground: #3d2b1f;
 
   /* Terracotta — accents, CTA, liens */
