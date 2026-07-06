@@ -10,7 +10,6 @@ import {
   Loader2,
   X,
   Check,
-  Layers,
   Wand2,
 } from "lucide-react";
 import {
@@ -19,7 +18,6 @@ import {
   deleteMoment,
   listArcs,
   saveArc,
-  deleteArc,
   previewPlan,
   applyPlan,
   MOMENT_KIND_LABELS,
@@ -57,11 +55,41 @@ const DEFAULT_LAUNCH_ARC = {
   moment_kind: "lancement" as MomentKind,
   description: "Un arc de référence pour un lancement : semer, teaser, ouvrir, urgence, clôture.",
   phases: [
-    { name: "Semer", anchor: "start" as const, offset_days: -21, post_count: 3, intent: "Poser le contexte, ouvrir le sujet, réveiller le besoin sans rien vendre." },
-    { name: "Teaser", anchor: "start" as const, offset_days: -7, post_count: 3, intent: "Annoncer l'arrivée de l'offre, créer l'attente, donner les grandes lignes." },
-    { name: "Ouverture", anchor: "start" as const, offset_days: 0, post_count: 2, intent: "Ouvrir les inscriptions, expliquer clairement l'offre, appeler à agir." },
-    { name: "Urgence", anchor: "end" as const, offset_days: -2, post_count: 2, intent: "Rappeler la deadline, lever les dernières objections, montrer les preuves." },
-    { name: "Clôture", anchor: "end" as const, offset_days: 0, post_count: 1, intent: "Dernier appel, ton direct, focus sur la décision." },
+    {
+      name: "Semer",
+      anchor: "start" as const,
+      offset_days: -21,
+      post_count: 3,
+      intent: "Poser le contexte, ouvrir le sujet, réveiller le besoin sans rien vendre.",
+    },
+    {
+      name: "Teaser",
+      anchor: "start" as const,
+      offset_days: -7,
+      post_count: 3,
+      intent: "Annoncer l'arrivée de l'offre, créer l'attente, donner les grandes lignes.",
+    },
+    {
+      name: "Ouverture",
+      anchor: "start" as const,
+      offset_days: 0,
+      post_count: 2,
+      intent: "Ouvrir les inscriptions, expliquer clairement l'offre, appeler à agir.",
+    },
+    {
+      name: "Urgence",
+      anchor: "end" as const,
+      offset_days: -2,
+      post_count: 2,
+      intent: "Rappeler la deadline, lever les dernières objections, montrer les preuves.",
+    },
+    {
+      name: "Clôture",
+      anchor: "end" as const,
+      offset_days: 0,
+      post_count: 1,
+      intent: "Dernier appel, ton direct, focus sur la décision.",
+    },
   ],
 };
 
@@ -71,30 +99,34 @@ function TimingPage() {
   const fnDeleteMoment = useServerFn(deleteMoment);
   const fnListArcs = useServerFn(listArcs);
   const fnSaveArc = useServerFn(saveArc);
-  const fnDeleteArc = useServerFn(deleteArc);
   const fnPreview = useServerFn(previewPlan);
   const fnApply = useServerFn(applyPlan);
 
   const [moments, setMoments] = useState<BusinessMoment[]>([]);
   const [arcs, setArcs] = useState<ContentArc[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<"moments" | "arcs">("moments");
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [momentDraft, setMomentDraft] = useState<Partial<BusinessMoment> | null>(null);
-  const [arcDraft, setArcDraft] = useState<(Omit<ContentArc, "id"> & { id?: string }) | null>(null);
   const [planFor, setPlanFor] = useState<BusinessMoment | null>(null);
 
   async function reload() {
     setLoading(true);
-    const [m, a] = await Promise.all([fnListMoments(), fnListArcs()]);
-    setMoments(m);
-    setArcs(a);
-    // Seed default arc if empty
-    if (a.length === 0) {
-      await fnSaveArc({ data: DEFAULT_LAUNCH_ARC });
-      const a2 = await fnListArcs();
-      setArcs(a2);
+    setLoadError(null);
+    try {
+      const [m, a] = await Promise.all([fnListMoments(), fnListArcs()]);
+      setMoments(m);
+      setArcs(a);
+      // Seed default arc if empty
+      if (a.length === 0) {
+        await fnSaveArc({ data: DEFAULT_LAUNCH_ARC });
+        const a2 = await fnListArcs();
+        setArcs(a2);
+      }
+    } catch (e) {
+      setLoadError(e instanceof Error ? e.message : "Le chargement a échoué.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -108,42 +140,28 @@ function TimingPage() {
         <p className="text-xs uppercase tracking-[0.2em] opacity-60">Le tempo</p>
         <h1 className="text-5xl">Timing Business</h1>
         <p className="tagline max-w-2xl">
-          Vos temps forts (lancements, cohortes, fenêtres de vente) et les arcs de
-          contenu réutilisables qui préparent le terrain.
+          Vos temps forts (lancements, cohortes, fenêtres de vente) et le rétroplanning de contenu
+          qui prépare le terrain.
         </p>
       </header>
-
-      <nav className="flex gap-2 border-b border-border">
-        {(
-          [
-            { k: "moments" as const, label: "Temps forts", icon: CalendarClock },
-            { k: "arcs" as const, label: "Arcs de contenu", icon: Layers },
-          ]
-        ).map((t) => {
-          const Icon = t.icon;
-          const active = tab === t.k;
-          return (
-            <button
-              key={t.k}
-              onClick={() => setTab(t.k)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 -mb-px transition-colors ${
-                active
-                  ? "border-primary text-primary"
-                  : "border-transparent opacity-70 hover:opacity-100"
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {t.label}
-            </button>
-          );
-        })}
-      </nav>
 
       {loading ? (
         <div className="flex items-center gap-2 opacity-60 text-sm">
           <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
         </div>
-      ) : tab === "moments" ? (
+      ) : loadError ? (
+        <div className="bg-card rounded-2xl p-8 text-center space-y-3 shadow-[var(--shadow-soft)]">
+          <p className="text-sm opacity-70">
+            Le chargement a échoué. Reconnectez-vous si le problème persiste.
+          </p>
+          <button
+            onClick={reload}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90"
+          >
+            Réessayer
+          </button>
+        </div>
+      ) : (
         <MomentsList
           moments={moments}
           arcs={arcs}
@@ -164,24 +182,6 @@ function TimingPage() {
           }}
           onPlan={(m) => setPlanFor(m)}
         />
-      ) : (
-        <ArcsList
-          arcs={arcs}
-          onNew={() =>
-            setArcDraft({
-              name: "",
-              moment_kind: "lancement",
-              description: "",
-              phases: [],
-            })
-          }
-          onEdit={(a) => setArcDraft(a)}
-          onDelete={async (id) => {
-            if (!confirm("Supprimer cet arc ?")) return;
-            await fnDeleteArc({ data: { id } });
-            reload();
-          }}
-        />
       )}
 
       {momentDraft && (
@@ -196,22 +196,14 @@ function TimingPage() {
         />
       )}
 
-      {arcDraft && (
-        <ArcDialog
-          draft={arcDraft}
-          onCancel={() => setArcDraft(null)}
-          onSave={async (d) => {
-            await fnSaveArc({ data: d });
-            setArcDraft(null);
-            reload();
-          }}
-        />
-      )}
-
       {planFor && (
         <PlanDialog
           moment={planFor}
-          arcs={arcs.filter((a) => a.moment_kind === planFor.kind)}
+          arcs={
+            arcs.filter((a) => a.moment_kind === planFor.kind).length > 0
+              ? arcs.filter((a) => a.moment_kind === planFor.kind)
+              : arcs
+          }
           allArcs={arcs}
           onClose={() => setPlanFor(null)}
           onPreview={(arcId) => fnPreview({ data: { moment_id: planFor.id, arc_id: arcId } })}
@@ -257,14 +249,13 @@ function MomentsList({
         <div className="bg-card rounded-2xl p-10 text-center space-y-2 shadow-[var(--shadow-soft)]">
           <CalendarClock className="h-8 w-8 mx-auto opacity-40" />
           <p className="text-sm opacity-70">
-            Aucun temps fort pour l'instant. Commencez par déclarer un lancement,
-            une cohorte ou une fenêtre de vente.
+            Aucun temps fort pour l'instant. Commencez par déclarer un lancement, une cohorte ou une
+            fenêtre de vente.
           </p>
         </div>
       ) : (
         <div className="grid gap-4">
           {moments.map((m) => {
-            const matching = arcs.filter((a) => a.moment_kind === m.kind);
             return (
               <article
                 key={m.id}
@@ -282,17 +273,12 @@ function MomentsList({
                     {m.end_date && ` → ${fmtDate(m.end_date)}`}
                   </p>
                   {m.notes && <p className="text-sm opacity-70 whitespace-pre-wrap">{m.notes}</p>}
-                  <p className="text-xs opacity-55">
-                    {matching.length} arc{matching.length > 1 ? "s" : ""} compatible
-                    {matching.length > 1 ? "s" : ""}
-                  </p>
                 </div>
                 <div className="flex sm:flex-col gap-2 shrink-0">
                   <button
                     onClick={() => onPlan(m)}
-                    disabled={matching.length === 0}
+                    disabled={arcs.length === 0}
                     className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm hover:opacity-90 disabled:opacity-40"
-                    title={matching.length === 0 ? "Créez d'abord un arc pour ce type" : ""}
                   >
                     <Wand2 className="h-4 w-4" /> Générer le rétroplanning
                   </button>
@@ -316,85 +302,6 @@ function MomentsList({
       )}
     </section>
   );
-}
-
-// ------------------ Arcs list ------------------
-
-function ArcsList({
-  arcs,
-  onNew,
-  onEdit,
-  onDelete,
-}: {
-  arcs: ContentArc[];
-  onNew: () => void;
-  onEdit: (a: ContentArc) => void;
-  onDelete: (id: string) => void;
-}) {
-  return (
-    <section className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl">Vos arcs de contenu</h2>
-        <button
-          onClick={onNew}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> Nouvel arc
-        </button>
-      </div>
-      <div className="grid gap-4">
-        {arcs.map((a) => (
-          <article key={a.id} className="bg-card rounded-2xl p-6 shadow-[var(--shadow-soft)] space-y-3">
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <h3 className="text-2xl">{a.name}</h3>
-                  <span className="text-xs uppercase tracking-widest opacity-60 border border-border rounded-full px-2 py-0.5">
-                    {MOMENT_KIND_LABELS[a.moment_kind]}
-                  </span>
-                </div>
-                {a.description && <p className="text-sm opacity-70 mt-1">{a.description}</p>}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onEdit(a)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-muted"
-                >
-                  <Pencil className="h-4 w-4" /> Modifier
-                </button>
-                <button
-                  onClick={() => onDelete(a.id)}
-                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-muted text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" /> Supprimer
-                </button>
-              </div>
-            </div>
-            {a.phases && a.phases.length > 0 && (
-              <ol className="grid gap-2">
-                {a.phases.map((p) => (
-                  <li key={p.id} className="rounded-xl bg-popover/60 px-3 py-2 text-sm flex flex-wrap items-baseline gap-3">
-                    <span className="text-primary font-medium">{p.name}</span>
-                    <span className="opacity-60 text-xs">{formatOffset(p)}</span>
-                    <span className="opacity-60 text-xs">· {p.post_count} contenu{p.post_count > 1 ? "s" : ""}</span>
-                    {p.intent && <span className="opacity-75 basis-full sm:basis-auto sm:flex-1">— {p.intent}</span>}
-                  </li>
-                ))}
-              </ol>
-            )}
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function formatOffset(p: { anchor: "start" | "end"; offset_days: number }) {
-  const anchor = p.anchor === "end" ? "fin" : "début";
-  if (p.offset_days === 0) return `Jour J (${anchor})`;
-  const abs = Math.abs(p.offset_days);
-  const dir = p.offset_days < 0 ? "avant" : "après";
-  return `${abs} j ${dir} ${anchor}`;
 }
 
 // ------------------ Moment dialog ------------------
@@ -428,7 +335,11 @@ function MomentDialog({
           <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} />
         </Field>
         <Field label="Type">
-          <select value={kind} onChange={(e) => setKind(e.target.value as MomentKind)} className={inputCls}>
+          <select
+            value={kind}
+            onChange={(e) => setKind(e.target.value as MomentKind)}
+            className={inputCls}
+          >
             {KINDS.map((k) => (
               <option key={k} value={k}>
                 {MOMENT_KIND_LABELS[k]}
@@ -438,17 +349,35 @@ function MomentDialog({
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Date de début">
-            <input type="date" value={start} onChange={(e) => setStart(e.target.value)} className={inputCls} />
+            <input
+              type="date"
+              value={start}
+              onChange={(e) => setStart(e.target.value)}
+              className={inputCls}
+            />
           </Field>
           <Field label="Date de fin (facultatif)">
-            <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className={inputCls} />
+            <input
+              type="date"
+              value={end}
+              onChange={(e) => setEnd(e.target.value)}
+              className={inputCls}
+            />
           </Field>
         </div>
         <Field label="Notes">
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={inputCls} />
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            className={inputCls}
+          />
         </Field>
         <div className="flex justify-end gap-2 pt-2">
-          <button onClick={onCancel} className="rounded-lg border border-border bg-card px-4 py-2 text-sm hover:bg-muted">
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-border bg-card px-4 py-2 text-sm hover:bg-muted"
+          >
             Annuler
           </button>
           <button
@@ -475,145 +404,6 @@ function MomentDialog({
   );
 }
 
-// ------------------ Arc dialog ------------------
-
-type ArcDraft = Omit<ContentArc, "id"> & { id?: string };
-
-function ArcDialog({
-  draft,
-  onCancel,
-  onSave,
-}: {
-  draft: ArcDraft;
-  onCancel: () => void;
-  onSave: (d: {
-    id?: string;
-    name: string;
-    moment_kind: MomentKind;
-    description: string;
-    phases: Array<Pick<ArcPhase, "name" | "anchor" | "offset_days" | "post_count" | "intent">>;
-  }) => void;
-}) {
-  const [name, setName] = useState(draft.name);
-  const [kind, setKind] = useState<MomentKind>(draft.moment_kind);
-  const [description, setDescription] = useState(draft.description);
-  const [phases, setPhases] = useState<Array<Pick<ArcPhase, "name" | "anchor" | "offset_days" | "post_count" | "intent">>>(
-    () => (draft.phases ?? []).map((p) => ({ name: p.name, anchor: p.anchor, offset_days: p.offset_days, post_count: p.post_count, intent: p.intent })),
-  );
-  const [saving, setSaving] = useState(false);
-  return (
-    <Modal onClose={onCancel} title={draft.id ? "Modifier l'arc" : "Nouvel arc de contenu"}>
-      <div className="space-y-4">
-        <Field label="Nom">
-          <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="S'applique à">
-            <select value={kind} onChange={(e) => setKind(e.target.value as MomentKind)} className={inputCls}>
-              {KINDS.map((k) => (
-                <option key={k} value={k}>{MOMENT_KIND_LABELS[k]}</option>
-              ))}
-            </select>
-          </Field>
-        </div>
-        <Field label="Description">
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className={inputCls} />
-        </Field>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h4 className="text-lg" style={{ fontFamily: "'Cormorant Garamond', serif" }}>Phases</h4>
-            <button
-              onClick={() =>
-                setPhases((p) => [...p, { name: "", anchor: "start", offset_days: 0, post_count: 1, intent: "" }])
-              }
-              className="text-xs inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 hover:bg-muted"
-            >
-              <Plus className="h-3 w-3" /> Ajouter une phase
-            </button>
-          </div>
-          {phases.map((p, i) => (
-            <div key={i} className="rounded-xl border border-border bg-popover/40 p-3 space-y-2">
-              <div className="flex items-start gap-2">
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-4 gap-2">
-                  <input
-                    placeholder="Nom (ex. Teaser)"
-                    value={p.name}
-                    onChange={(e) => updatePhase(i, { name: e.target.value })}
-                    className={inputCls}
-                  />
-                  <select
-                    value={p.anchor}
-                    onChange={(e) => updatePhase(i, { anchor: e.target.value as "start" | "end" })}
-                    className={inputCls}
-                  >
-                    <option value="start">Par rapport au début</option>
-                    <option value="end">Par rapport à la fin</option>
-                  </select>
-                  <input
-                    type="number"
-                    value={p.offset_days}
-                    onChange={(e) => updatePhase(i, { offset_days: Number(e.target.value) })}
-                    className={inputCls}
-                    title="Décalage en jours (négatif = avant)"
-                  />
-                  <input
-                    type="number"
-                    min={1}
-                    value={p.post_count}
-                    onChange={(e) => updatePhase(i, { post_count: Math.max(1, Number(e.target.value)) })}
-                    className={inputCls}
-                    title="Nombre de contenus"
-                  />
-                </div>
-                <button
-                  onClick={() => setPhases((all) => all.filter((_, j) => j !== i))}
-                  className="p-2 opacity-60 hover:opacity-100 hover:text-destructive"
-                  title="Supprimer"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <textarea
-                placeholder="Intention (ce que le contenu doit faire à ce moment)"
-                value={p.intent}
-                onChange={(e) => updatePhase(i, { intent: e.target.value })}
-                rows={2}
-                className={inputCls}
-              />
-              <p className="text-xs opacity-60">{formatOffset(p)} · {p.post_count} contenu{p.post_count > 1 ? "s" : ""}</p>
-            </div>
-          ))}
-          {phases.length === 0 && (
-            <p className="text-sm opacity-60 italic">Aucune phase. Ajoutez-en pour construire l'arc.</p>
-          )}
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <button onClick={onCancel} className="rounded-lg border border-border bg-card px-4 py-2 text-sm hover:bg-muted">
-            Annuler
-          </button>
-          <button
-            disabled={!name || saving}
-            onClick={async () => {
-              setSaving(true);
-              await onSave({ id: draft.id, name, moment_kind: kind, description, phases });
-              setSaving(false);
-            }}
-            className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50"
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enregistrer"}
-          </button>
-        </div>
-      </div>
-    </Modal>
-  );
-
-  function updatePhase(i: number, patch: Partial<(typeof phases)[number]>) {
-    setPhases((all) => all.map((p, j) => (j === i ? { ...p, ...patch } : p)));
-  }
-}
-
 // ------------------ Plan dialog ------------------
 
 function PlanDialog({
@@ -628,11 +418,16 @@ function PlanDialog({
   arcs: ContentArc[];
   allArcs: ContentArc[];
   onClose: () => void;
-  onPreview: (arcId: string) => Promise<{ plan: PlanItem[]; existingByPhase: Record<string, number> }>;
+  onPreview: (
+    arcId: string,
+  ) => Promise<{ plan: PlanItem[]; existingByPhase: Record<string, number> }>;
   onApply: (arcId: string, onlyMissing: boolean) => Promise<{ created: number }>;
 }) {
   const [arcId, setArcId] = useState<string>(arcs[0]?.id ?? "");
-  const [preview, setPreview] = useState<{ plan: PlanItem[]; existingByPhase: Record<string, number> } | null>(null);
+  const [preview, setPreview] = useState<{
+    plan: PlanItem[];
+    existingByPhase: Record<string, number>;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
   const [done, setDone] = useState<number | null>(null);
@@ -672,7 +467,9 @@ function PlanDialog({
           ) : (
             <select value={arcId} onChange={(e) => setArcId(e.target.value)} className={inputCls}>
               {arcs.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
               ))}
             </select>
           )}
@@ -692,11 +489,15 @@ function PlanDialog({
             <ol className="max-h-72 overflow-auto rounded-xl border border-border divide-y divide-border/60">
               {preview.plan.map((it, i) => (
                 <li key={i} className="px-4 py-2.5 text-sm flex items-baseline gap-3">
-                  <span className="w-28 shrink-0 opacity-60 text-xs">{fmtDateTime(it.scheduled_at)}</span>
+                  <span className="w-28 shrink-0 opacity-60 text-xs">
+                    {fmtDateTime(it.scheduled_at)}
+                  </span>
                   <span className="text-primary font-medium w-28 shrink-0">{it.phase_name}</span>
                   <span className="opacity-75 flex-1 truncate">{it.intent || "—"}</span>
                   {it.total_in_phase > 1 && (
-                    <span className="text-xs opacity-50">{it.index_in_phase}/{it.total_in_phase}</span>
+                    <span className="text-xs opacity-50">
+                      {it.index_in_phase}/{it.total_in_phase}
+                    </span>
                   )}
                 </li>
               ))}
@@ -714,22 +515,26 @@ function PlanDialog({
                   className="mt-1"
                 />
                 <span>
-                  Ce temps fort contient déjà des posts. Ne créer que <strong>ce qui manque</strong> et
-                  ne pas écraser l'existant.
+                  Ce temps fort contient déjà des posts. Ne créer que <strong>ce qui manque</strong>{" "}
+                  et ne pas écraser l'existant.
                 </span>
               </label>
             )}
 
             {done !== null && (
               <p className="text-sm text-primary inline-flex items-center gap-2">
-                <Check className="h-4 w-4" /> {done} post{done > 1 ? "s" : ""} créé{done > 1 ? "s" : ""} en brouillon dans le Studio & le Calendrier.
+                <Check className="h-4 w-4" /> {done} post{done > 1 ? "s" : ""} créé
+                {done > 1 ? "s" : ""} en brouillon dans le Studio & le Calendrier.
               </p>
             )}
           </div>
         )}
 
         <div className="flex justify-end gap-2 pt-2">
-          <button onClick={onClose} className="rounded-lg border border-border bg-card px-4 py-2 text-sm hover:bg-muted">
+          <button
+            onClick={onClose}
+            className="rounded-lg border border-border bg-card px-4 py-2 text-sm hover:bg-muted"
+          >
             Fermer
           </button>
           <button
@@ -746,7 +551,11 @@ function PlanDialog({
             }}
             className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50"
           >
-            {applying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            {applying ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Wand2 className="h-4 w-4" />
+            )}
             Créer les brouillons
           </button>
         </div>

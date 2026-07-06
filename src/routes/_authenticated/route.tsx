@@ -13,14 +13,24 @@ function AuthenticatedLayout() {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
+    (async () => {
+      const { data } = await supabase.auth.getSession();
       if (!mounted) return;
       if (!data.session) {
+        navigate({ to: "/auth", replace: true });
+        return;
+      }
+      // Valide le jeton côté serveur : une session locale peut être orpheline
+      // (compte supprimé, secret JWT changé) et bloquerait toutes les pages.
+      const { error } = await supabase.auth.getUser();
+      if (!mounted) return;
+      if (error) {
+        await supabase.auth.signOut().catch(() => {});
         navigate({ to: "/auth", replace: true });
       } else {
         setReady(true);
       }
-    });
+    })();
     return () => {
       mounted = false;
     };
