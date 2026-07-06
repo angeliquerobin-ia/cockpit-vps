@@ -18,9 +18,7 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl">404</h1>
         <h2 className="mt-4 text-xl">Page introuvable</h2>
-        <p className="mt-2 text-sm opacity-70">
-          Cette page n'existe pas ou a été déplacée.
-        </p>
+        <p className="mt-2 text-sm opacity-70">Cette page n'existe pas ou a été déplacée.</p>
         <div className="mt-6">
           <Link
             to="/"
@@ -73,17 +71,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Cockpit de création de contenu" },
-      { name: "description", content: "Votre cockpit personnel pour piloter la création de contenu de A à Z." },
+      {
+        name: "description",
+        content: "Votre cockpit personnel pour piloter la création de contenu de A à Z.",
+      },
       { property: "og:title", content: "Cockpit de création de contenu" },
       { name: "twitter:title", content: "Cockpit de création de contenu" },
-      { property: "og:description", content: "Votre cockpit personnel pour piloter la création de contenu de A à Z." },
-      { name: "twitter:description", content: "Votre cockpit personnel pour piloter la création de contenu de A à Z." },
+      {
+        property: "og:description",
+        content: "Votre cockpit personnel pour piloter la création de contenu de A à Z.",
+      },
+      {
+        name: "twitter:description",
+        content: "Votre cockpit personnel pour piloter la création de contenu de A à Z.",
+      },
       { property: "og:image", content: "https://cockpit.angeliquerobin.com/cockpit-logo.png" },
       { name: "twitter:image", content: "https://cockpit.angeliquerobin.com/cockpit-logo.png" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
     links: [
+      { rel: "icon", type: "image/png", href: "/cockpit-logo.png" },
+      { rel: "apple-touch-icon", href: "/cockpit-logo.png" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

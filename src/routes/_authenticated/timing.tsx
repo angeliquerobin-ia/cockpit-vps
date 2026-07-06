@@ -11,6 +11,7 @@ import {
   X,
   Check,
   Wand2,
+  FileDown,
 } from "lucide-react";
 import {
   listMoments,
@@ -135,8 +136,8 @@ function TimingPage() {
   }, []);
 
   return (
-    <div className="space-y-10">
-      <header className="space-y-2">
+    <div className="space-y-10 print:space-y-6">
+      <header className="space-y-2 print:hidden">
         <p className="text-xs uppercase tracking-[0.2em] opacity-60">Le tempo</p>
         <h1 className="text-5xl">Timing Business</h1>
         <p className="tagline max-w-2xl">
@@ -145,8 +146,10 @@ function TimingPage() {
         </p>
       </header>
 
+      <TimingPrintSheet moments={moments} />
+
       {loading ? (
-        <div className="flex items-center gap-2 opacity-60 text-sm">
+        <div className="flex items-center gap-2 opacity-60 text-sm print:hidden">
           <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
         </div>
       ) : loadError ? (
@@ -216,6 +219,49 @@ function TimingPage() {
   );
 }
 
+// ------------------ Feuille imprimable (export PDF) ------------------
+
+function TimingPrintSheet({ moments }: { moments: BusinessMoment[] }) {
+  const sorted = [...moments].sort((a, b) => a.start_date.localeCompare(b.start_date));
+  const years = [...new Set(sorted.map((m) => m.start_date.slice(0, 4)))];
+  return (
+    <section className="hidden print:block text-[#3d2b1f]">
+      <header className="mb-8 border-b border-[#e9dcc7] pb-4">
+        <h1 className="text-4xl">Timing Business</h1>
+        <p className="text-sm mt-1 opacity-70">
+          {years.join(" · ")} — exporté le{" "}
+          {new Date().toLocaleDateString("fr-FR", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          })}
+        </p>
+      </header>
+      {sorted.length === 0 ? (
+        <p className="text-sm opacity-70">Aucun temps fort déclaré.</p>
+      ) : (
+        <div className="space-y-6">
+          {sorted.map((m) => (
+            <article key={m.id} className="break-inside-avoid border-b border-[#e9dcc7] pb-4">
+              <div className="flex items-baseline justify-between gap-4">
+                <h2 className="text-2xl">{m.title}</h2>
+                <span className="text-xs uppercase tracking-widest opacity-60 shrink-0">
+                  {MOMENT_KIND_LABELS[m.kind]}
+                </span>
+              </div>
+              <p className="text-sm mt-1">
+                {fmtDate(m.start_date)}
+                {m.end_date && ` → ${fmtDate(m.end_date)}`}
+              </p>
+              {m.notes && <p className="text-sm mt-2 opacity-80 whitespace-pre-wrap">{m.notes}</p>}
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ------------------ Moments list ------------------
 
 function MomentsList({
@@ -234,15 +280,27 @@ function MomentsList({
   onPlan: (m: BusinessMoment) => void;
 }) {
   return (
-    <section className="space-y-4">
-      <div className="flex justify-between items-center">
+    <section className="space-y-4 print:hidden">
+      <div className="flex justify-between items-center gap-3 flex-wrap">
         <h2 className="text-3xl">Vos temps forts</h2>
-        <button
-          onClick={onNew}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> Nouveau temps fort
-        </button>
+        <div className="flex items-center gap-2">
+          {moments.length > 0 && (
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-2 rounded-lg border border-input bg-card px-4 py-2 text-sm hover:bg-muted"
+            >
+              <FileDown className="h-4 w-4" />
+              <span className="hidden sm:inline">Exporter en PDF</span>
+              <span className="sm:hidden">PDF</span>
+            </button>
+          )}
+          <button
+            onClick={onNew}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" /> Nouveau temps fort
+          </button>
+        </div>
       </div>
 
       {moments.length === 0 ? (
