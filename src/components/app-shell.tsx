@@ -12,6 +12,8 @@ import {
   Users,
   Settings,
   Trash2,
+  Archive,
+  Recycle,
   LogOut,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -26,6 +28,8 @@ const nav = [
   { to: "/reels", label: "Réels", icon: Film },
   { to: "/statistiques", label: "Statistiques", icon: BarChart3 },
   { to: "/concurrents", label: "Veille stratégique", icon: Users },
+  { to: "/archive", label: "Archive", icon: Archive },
+  { to: "/recyclage", label: "Recyclage", icon: Recycle },
   { to: "/corbeille", label: "Corbeille", icon: Trash2 },
   { to: "/reglages", label: "Réglages", icon: Settings },
 ] as const;
