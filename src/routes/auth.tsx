@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { Info, MailWarning } from "lucide-react";
+import { Info } from "lucide-react";
 const cockpitLogo = { url: "/cockpit-logo.png" };
 
 export const Route = createFileRoute("/auth")({
@@ -34,14 +34,19 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        toast.success("Compte créé. Vérifiez votre boîte mail (et vos spams).");
-        setMode("signin");
+        if (data.session) {
+          // Autoconfirmation active : session immédiate, pas d'email à attendre
+          navigate({ to: "/strategie", replace: true });
+        } else {
+          toast.success("Compte créé. Vérifiez votre boîte mail pour confirmer.");
+          setMode("signin");
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -110,17 +115,6 @@ function AuthPage() {
             </button>
           </div>
 
-          {mode === "signup" && (
-            <div className="mb-5 flex gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5 text-xs leading-relaxed">
-              <MailWarning className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-              <p className="opacity-85">
-                L'email de confirmation peut atterrir dans les <strong>spams</strong> ou
-                la catégorie <em>Promotions</em>. Pensez à le marquer comme
-                « non-hameçonnage » / « pas de spam » pour recevoir correctement
-                les futurs messages de l'app.
-              </p>
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
