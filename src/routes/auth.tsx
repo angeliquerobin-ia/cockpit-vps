@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { Info, MailWarning } from "lucide-react";
-import cockpitLogo from "@/assets/cockpit-logo.png.asset.json";
+const cockpitLogo = { url: "/cockpit-logo.png" };
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

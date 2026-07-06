@@ -17,7 +17,7 @@ function buildProvider(name: string, endpoint: string, apiKey: string) {
     baseURL: endpoint.replace(/\/+$/, ""),
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      "HTTP-Referer": "https://lovable.dev",
+      "HTTP-Referer": "https://cockpit.angeliquerobin.com",
       "X-Title": "Cockpit",
     },
   });

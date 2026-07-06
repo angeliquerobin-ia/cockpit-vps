@@ -6,7 +6,7 @@ export function createOpenRouterProvider(apiKey: string) {
     baseURL: "https://openrouter.ai/api/v1",
     headers: {
       Authorization: `Bearer ${apiKey}`,
-      "HTTP-Referer": "https://lovable.dev",
+      "HTTP-Referer": "https://cockpit.angeliquerobin.com",
       "X-Title": "Coaching Writer",
     },
   });

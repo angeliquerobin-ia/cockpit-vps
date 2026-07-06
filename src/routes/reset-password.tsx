@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import cockpitLogo from "@/assets/cockpit-logo.png.asset.json";
+const cockpitLogo = { url: "/cockpit-logo.png" };
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({ meta: [{ title: "Nouveau mot de passe — Cockpit" }] }),

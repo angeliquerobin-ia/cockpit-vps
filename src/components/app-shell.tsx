@@ -17,12 +17,12 @@ import {
   LogOut,
 } from "lucide-react";
 import type { ReactNode } from "react";
-import cockpitLogo from "@/assets/cockpit-logo.png.asset.json";
+const cockpitLogo = { url: "/cockpit-logo.png" };
 
 const nav = [
   { to: "/strategie", label: "Stratégie", icon: Compass },
-  { to: "/idees", label: "Idées", icon: Lightbulb },
   { to: "/timing", label: "Timing Business", icon: CalendarClock },
+  { to: "/idees", label: "Idées", icon: Lightbulb },
   { to: "/calendrier", label: "Calendrier", icon: Calendar },
   { to: "/studio", label: "Studio de rédaction", icon: PenLine },
   { to: "/reels", label: "Réels", icon: Film },

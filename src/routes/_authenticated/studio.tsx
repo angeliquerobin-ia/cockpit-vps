@@ -145,13 +145,13 @@ function StudioPage() {
     if (!confirm("Mettre ce post à la corbeille ?")) return;
     setPosts((prev) => prev.filter((p) => p.id !== id));
     await supabase.from("posts").update({ deleted_at: new Date().toISOString() } as any).eq("id", id);
-    if (selectedId === id) navigate({ to: "/studio", search: {} });
+    if (selectedId === id) navigate({ to: "/studio", search: { post: undefined } });
   }
 
   async function moveTo(id: string, dest: "archive" | "recyclage") {
     setPosts((prev) => prev.filter((p) => p.id !== id));
     await supabase.from("posts").update({ location: dest } as any).eq("id", id);
-    if (selectedId === id) navigate({ to: "/studio", search: {} });
+    if (selectedId === id) navigate({ to: "/studio", search: { post: undefined } });
   }
 
   const filtered = posts.filter((p) => {
@@ -171,7 +171,7 @@ function StudioPage() {
         pillars={pillars}
         pillarById={pillarById}
         userId={userId}
-        onBack={() => navigate({ to: "/studio", search: {} })}
+        onBack={() => navigate({ to: "/studio", search: { post: undefined } })}
         onSave={(patch) => savePost(selected.id, patch)}
         onDelete={() => removePost(selected.id)}
         onRefresh={() => userId && loadAll(userId)}

@@ -50,46 +50,47 @@
 :root {
   --radius: 0.875rem;
 
-  /* Linen palette with subtle depth between background and surfaces */
-  --background: #f4ece0;
-  --foreground: #3d2a1f;
+  /* Palette Atelier (brief Stitch) : blanc lin, crème, marron, terracotta.
+     Jamais de blanc pur, jamais de gris neutre, pas de mode sombre. */
+  --background: #f7f3ed; /* Blanc Lin */
+  --foreground: #3d2b1f; /* Marron Doux — texte courant */
 
-  --card: #faf5ec;
-  --card-foreground: #3d2a1f;
+  --card: #faeee0; /* Crème — blocs et cartes */
+  --card-foreground: #3d2b1f;
 
-  --popover: #faf5ec;
-  --popover-foreground: #3d2a1f;
+  --popover: #faeee0;
+  --popover-foreground: #3d2b1f;
 
-  /* Terracotta tuned to the Cockpit logo */
-  --primary: #c25a35;
-  --primary-foreground: #faf5ec;
+  /* Terracotta — accents, CTA, liens */
+  --primary: #a7421b;
+  --primary-foreground: #faeee0;
 
-  --secondary: #ede2cf;
-  --secondary-foreground: #3d2a1f;
+  --secondary: #f0e6d6; /* Sable Doux */
+  --secondary-foreground: #3d2b1f;
 
-  --muted: #f0e6d3;
-  --muted-foreground: #7a5a45;
+  --muted: #f0e6d6;
+  --muted-foreground: #9e7e6a; /* Brun Moyen — métadonnées */
 
-  --accent: #ede2cf;
-  --accent-foreground: #3d2a1f;
+  --accent: #f0e6d6;
+  --accent-foreground: #3d2b1f;
 
   --destructive: #8a2f15;
-  --destructive-foreground: #faf5ec;
+  --destructive-foreground: #faeee0;
 
-  --border: #e0d3b8;
-  --input: #e0d3b8;
-  --ring: #c25a35;
+  --border: #e9dcc7;
+  --input: #e9dcc7;
+  --ring: #a7421b;
 
-  --title-accent: #c25a35;
+  --title-accent: #5a3b2a; /* Marron Profond — titres */
 
-  --sidebar: #ede2cf;
-  --sidebar-foreground: #3d2a1f;
-  --sidebar-primary: #c25a35;
-  --sidebar-primary-foreground: #faf5ec;
-  --sidebar-accent: #e0d3b8;
-  --sidebar-accent-foreground: #3d2a1f;
-  --sidebar-border: #d6c7a8;
-  --sidebar-ring: #c25a35;
+  --sidebar: #f0e6d6; /* Sable Doux — navigation */
+  --sidebar-foreground: #5a3b2a;
+  --sidebar-primary: #a7421b;
+  --sidebar-primary-foreground: #faeee0;
+  --sidebar-accent: #e7d9c2;
+  --sidebar-accent-foreground: #5a3b2a;
+  --sidebar-border: #e3d5bd;
+  --sidebar-ring: #a7421b;
 }
 
 @layer base {

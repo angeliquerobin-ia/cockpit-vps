@@ -7,6 +7,9 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  // Serveur autonome Bun dans .output/ (au lieu du preset Cloudflare par défaut),
+  // requis pour l'exécution via le Dockerfile sur Coolify.
+  nitro: { preset: "bun" },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this

@@ -10,7 +10,6 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 
 function NotFoundComponent() {
@@ -38,9 +37,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -82,8 +78,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "Cockpit de création de contenu" },
       { property: "og:description", content: "Votre cockpit personnel pour piloter la création de contenu de A à Z." },
       { name: "twitter:description", content: "Votre cockpit personnel pour piloter la création de contenu de A à Z." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/eC61471OHyc5zOKtxl5XCJBsSHE3/social-images/social-1782468711025-logos_colibris_phoenix_(900_x_900_px)_(Publicité_Facebook).webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/eC61471OHyc5zOKtxl5XCJBsSHE3/social-images/social-1782468711025-logos_colibris_phoenix_(900_x_900_px)_(Publicité_Facebook).webp" },
+      { property: "og:image", content: "https://cockpit.angeliquerobin.com/cockpit-logo.png" },
+      { name: "twitter:image", content: "https://cockpit.angeliquerobin.com/cockpit-logo.png" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],
