@@ -18,6 +18,8 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
@@ -37,7 +39,14 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: {
+              prenom: firstName.trim(),
+              nom: lastName.trim(),
+              full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+            },
+          },
         });
         if (error) throw error;
         if (data.session) {
@@ -67,9 +76,7 @@ function AuthPage() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      toast.success(
-        "Email envoyé. Pensez à vérifier vos spams si vous ne le voyez pas.",
-      );
+      toast.success("Email envoyé. Pensez à vérifier vos spams si vous ne le voyez pas.");
       setForgotOpen(false);
       setForgotEmail("");
     } catch (err: any) {
@@ -99,7 +106,9 @@ function AuthPage() {
               type="button"
               onClick={() => setMode("signin")}
               className={`flex-1 rounded-lg py-2 text-sm transition-colors ${
-                mode === "signin" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                mode === "signin"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-foreground"
               }`}
             >
               Connexion
@@ -108,17 +117,52 @@ function AuthPage() {
               type="button"
               onClick={() => setMode("signup")}
               className={`flex-1 rounded-lg py-2 text-sm transition-colors ${
-                mode === "signup" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                mode === "signup"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-foreground"
               }`}
             >
               Inscription
             </button>
           </div>
 
-
           <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === "signup" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs uppercase tracking-wider mb-1.5 opacity-70">
+                    Prénom
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoComplete="given-name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full rounded-lg bg-muted px-4 py-2.5 text-foreground placeholder:opacity-50 outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Angélique"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs uppercase tracking-wider mb-1.5 opacity-70">
+                    Nom
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoComplete="family-name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full rounded-lg bg-muted px-4 py-2.5 text-foreground placeholder:opacity-50 outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Robin"
+                  />
+                </div>
+              </div>
+            )}
             <div>
-              <label className="block text-xs uppercase tracking-wider mb-1.5 opacity-70">Email</label>
+              <label className="block text-xs uppercase tracking-wider mb-1.5 opacity-70">
+                Email
+              </label>
               <input
                 type="email"
                 required
@@ -130,7 +174,9 @@ function AuthPage() {
             </div>
             <div>
               <div className="flex items-baseline justify-between mb-1.5">
-                <label className="block text-xs uppercase tracking-wider opacity-70">Mot de passe</label>
+                <label className="block text-xs uppercase tracking-wider opacity-70">
+                  Mot de passe
+                </label>
                 {mode === "signin" && (
                   <button
                     type="button"
@@ -168,8 +214,8 @@ function AuthPage() {
               <div className="flex gap-2 items-start">
                 <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                 <p className="text-xs opacity-80 leading-relaxed">
-                  Entrez votre email : un lien de réinitialisation vous sera
-                  envoyé. Si vous ne le voyez pas, vérifiez vos spams.
+                  Entrez votre email : un lien de réinitialisation vous sera envoyé. Si vous ne le
+                  voyez pas, vérifiez vos spams.
                 </p>
               </div>
               <form onSubmit={handleForgot} className="space-y-3">
