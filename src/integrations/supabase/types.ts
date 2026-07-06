@@ -372,6 +372,7 @@ export type Database = {
           deleted_at: string | null
           id: string
           idea_id: string | null
+          location: string
           metricool_id: string | null
           moment_id: string | null
           phase_name: string | null
@@ -393,6 +394,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           idea_id?: string | null
+          location?: string
           metricool_id?: string | null
           moment_id?: string | null
           phase_name?: string | null
@@ -414,6 +416,7 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           idea_id?: string | null
+          location?: string
           metricool_id?: string | null
           moment_id?: string | null
           phase_name?: string | null
