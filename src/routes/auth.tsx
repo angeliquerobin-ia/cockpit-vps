@@ -82,7 +82,7 @@ function AuthPage() {
           <img
             src={cockpitLogo.url}
             alt="Cockpit"
-            className="h-40 w-auto mb-3 select-none"
+            className="h-40 w-auto mb-3 select-none mix-blend-multiply"
             draggable={false}
           />
           <p className="tagline text-sm">Création de contenu, en un seul lieu.</p>

@@ -54,7 +54,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <img
             src={cockpitLogo.url}
             alt="Cockpit"
-            className="h-24 w-auto select-none"
+            className="h-24 w-auto select-none mix-blend-multiply"
             draggable={false}
           />
           <p className="tagline text-xs mt-1 text-center">Création de contenu</p>
