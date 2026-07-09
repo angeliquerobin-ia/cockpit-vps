@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, X, Loader2, AlertTriangle, Sparkles } from "lucide-react";
+import { Send, X, Loader2, AlertTriangle, Sparkles, CheckCircle2, CalendarClock } from "lucide-react";
 import { CHANNEL_LABELS, ALL_CHANNELS } from "@/lib/channel-prompts";
 import { publishPostViaN8n } from "@/lib/publish.functions";
 
@@ -56,6 +56,11 @@ export function PublishDialog({
   const [channel, setChannel] = useState<string>(post.channel ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState<{
+    status: "publie" | "programme";
+    scheduled_at: string | null;
+    metricool_id: string | null;
+  } | null>(null);
 
   const publish = useServerFn(publishPostViaN8n);
 
@@ -130,7 +135,7 @@ export function PublishDialog({
               : undefined,
         },
       });
-      onPublished({
+      setDone({
         status: result.status as "publie" | "programme",
         scheduled_at: result.scheduled_at,
         metricool_id: result.metricool_id,
@@ -151,6 +156,14 @@ export function PublishDialog({
         className="bg-card rounded-2xl shadow-[var(--shadow-soft)] max-w-md w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
+        {done ? (
+          <SuccessScreen
+            result={done}
+            channel={channel}
+            onClose={() => onPublished(done)}
+          />
+        ) : (
+        <>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Send className="h-4 w-4 text-primary" />
@@ -314,7 +327,88 @@ export function PublishDialog({
             </div>
           </>
         )}
+        </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function SuccessScreen({
+  result,
+  channel,
+  onClose,
+}: {
+  result: {
+    status: "publie" | "programme";
+    scheduled_at: string | null;
+    metricool_id: string | null;
+  };
+  channel: string;
+  onClose: () => void;
+}) {
+  const isScheduled = result.status === "programme";
+  const channelLabel = CHANNEL_LABELS[channel] ?? channel;
+  const whenText =
+    isScheduled && result.scheduled_at
+      ? new Date(result.scheduled_at).toLocaleString("fr-FR", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
+
+  return (
+    <div className="text-center py-4 space-y-5">
+      <div className="flex justify-center">
+        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+          {isScheduled ? (
+            <CalendarClock className="h-8 w-8 text-primary" />
+          ) : (
+            <CheckCircle2 className="h-8 w-8 text-primary" />
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <h3 className="text-2xl">
+          {isScheduled ? "Post programmé !" : "Post envoyé !"}
+        </h3>
+        <p className="text-sm opacity-70">
+          {isScheduled ? (
+            <>
+              Votre post partira sur <strong>{channelLabel}</strong>
+              {whenText ? (
+                <>
+                  {" "}
+                  le <strong>{whenText}</strong>
+                </>
+              ) : null}
+              .
+            </>
+          ) : (
+            <>
+              Votre post a été envoyé à Metricool pour{" "}
+              <strong>{channelLabel}</strong>.
+            </>
+          )}
+        </p>
+      </div>
+
+      {result.metricool_id && (
+        <p className="text-[11px] opacity-50">
+          <em>Référence Metricool : {result.metricool_id}</em>
+        </p>
+      )}
+
+      <button
+        onClick={onClose}
+        className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2.5 text-sm hover:opacity-90 transition-opacity"
+      >
+        Terminé
+      </button>
     </div>
   );
 }
