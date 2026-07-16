@@ -18,7 +18,7 @@ export const AI_FUNCTION_DESCRIPTIONS: Record<AiFunctionKey, string> = {
   writer:
     "Rédaction, réécriture, correction et déclinaison des posts dans le Studio.",
   ideas:
-    "Suggestion d'idées et scission d'un braindump en cartes dans l'espace Idées.",
+    "Scission d'un braindump en cartes dans l'espace Idées.",
   stats:
     "Lecture et recommandations sur vos statistiques dans l'espace Statistiques.",
   competitors:
