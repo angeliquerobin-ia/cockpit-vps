@@ -191,7 +191,7 @@ function CalendarPage() {
       })
       .select("id")
       .single();
-    if (data) navigate({ to: "/studio", search: { post: data.id } });
+    if (data) navigate({ to: "/idees", search: { post: data.id } });
   }
 
   const headerLabel =
@@ -212,7 +212,7 @@ function CalendarPage() {
           <p className="text-base opacity-75 max-w-2xl">
             <em>
               Une vue d'ensemble de vos publications. Glissez pour replanifier,
-              cliquez pour ouvrir dans le Studio.
+              cliquez pour ouvrir l'éditeur.
             </em>
           </p>
         </div>
@@ -376,8 +376,8 @@ function CalendarPage() {
         <div className="bg-card rounded-2xl p-8 shadow-[var(--shadow-soft)] text-center space-y-2">
           <CalendarDays className="h-7 w-7 mx-auto opacity-40" />
           <p className="text-sm opacity-70">
-            Vos posts programmés apparaîtront ici. Datez un post dans le Studio
-            ou cliquez sur un jour vide pour en créer un.
+            Vos posts programmés apparaîtront ici. Datez une carte dans le Studio
+            de Création ou cliquez sur un jour vide pour en créer un.
           </p>
         </div>
       )}
@@ -405,7 +405,7 @@ function CalendarPage() {
           }
           onClose={() => setOpenedPost(null)}
           onOpenStudio={() => {
-            navigate({ to: "/studio", search: { post: openedPost.id } });
+            navigate({ to: "/idees", search: { post: openedPost.id } });
           }}
           onPublish={() => setPublishPost(openedPost)}
         />
@@ -513,7 +513,7 @@ function PostCardModal({
               onClick={onOpenStudio}
               className="inline-flex items-center gap-2 rounded-lg border border-input px-3 py-2 text-sm hover:bg-muted transition-colors"
             >
-              <Pencil className="h-4 w-4" /> Ouvrir dans le Studio
+              <Pencil className="h-4 w-4" /> Ouvrir l'éditeur
             </button>
             <button
               onClick={onPublish}

@@ -6,7 +6,6 @@ import {
   Lightbulb,
   Calendar,
   CalendarClock,
-  PenLine,
   Film,
   BarChart3,
   Users,
@@ -24,9 +23,8 @@ const cockpitLogo = { url: "/cockpit-logo.png" };
 const nav = [
   { to: "/strategie", label: "Stratégie", icon: Compass },
   { to: "/timing", label: "Timing Business", icon: CalendarClock },
-  { to: "/idees", label: "Idées", icon: Lightbulb },
+  { to: "/idees", label: "Studio de Création", icon: Lightbulb },
   { to: "/calendrier", label: "Calendrier", icon: Calendar },
-  { to: "/studio", label: "Studio de rédaction", icon: PenLine },
   { to: "/reels", label: "Réels", icon: Film },
   { to: "/statistiques", label: "Statistiques", icon: BarChart3 },
   { to: "/concurrents", label: "Veille stratégique", icon: Users },
@@ -39,9 +37,9 @@ const nav = [
 // Navigation basse mobile : les 4 espaces du quotidien (style Stitch),
 // le reste passe par le tiroir.
 const bottomNav = [
-  { to: "/studio", label: "Studio", icon: PenLine },
-  { to: "/idees", label: "Idées", icon: Lightbulb },
+  { to: "/idees", label: "Studio", icon: Lightbulb },
   { to: "/calendrier", label: "Calendrier", icon: Calendar },
+  { to: "/reels", label: "Réels", icon: Film },
   { to: "/reglages", label: "Réglages", icon: Settings },
 ] as const;
 

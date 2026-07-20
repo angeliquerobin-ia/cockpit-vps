@@ -221,7 +221,7 @@ function ReelsPage() {
       setError(error?.message ?? "Création du post impossible.");
       return;
     }
-    navigate({ to: "/studio", search: { post: data.id } });
+    navigate({ to: "/idees", search: { post: data.id } });
   }
 
   const subtitleFn = useServerFn(subtitleReel);
@@ -291,7 +291,7 @@ function ReelsPage() {
         .single();
       if (error || !data)
         throw new Error(error?.message ?? "Création du post impossible.");
-      navigate({ to: "/studio", search: { post: data.id } });
+      navigate({ to: "/idees", search: { post: data.id } });
     } catch (e: any) {
       setError(e?.message ?? "Programmation impossible.");
     } finally {

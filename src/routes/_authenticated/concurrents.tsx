@@ -475,7 +475,7 @@ function CompetitorsPage() {
               text={contentAnalysis}
               addedIdeas={addedIdeas}
               onAdd={handleAddIdea}
-              onGoToIdeas={() => navigate({ to: "/idees" })}
+              onGoToIdeas={() => navigate({ to: "/idees", search: { post: undefined } })}
             />
           </article>
         )}

@@ -71,7 +71,7 @@ function ArchivePage() {
     const patch: any = { location: dest };
     if (dest === "creation") patch.status = "en_redaction";
     await supabase.from("posts").update(patch).eq("id", id);
-    if (dest === "creation") navigate({ to: "/studio", search: { post: id } });
+    if (dest === "creation") navigate({ to: "/idees", search: { post: id } });
   }
 
   const filtered = rows.filter((r) => {

@@ -344,7 +344,7 @@ function StatsPage() {
             text={analyses[activeMode]!}
             addedIdeas={addedIdeas}
             onAdd={handleAddIdea}
-            onGoToIdeas={() => navigate({ to: "/idees" })}
+            onGoToIdeas={() => navigate({ to: "/idees", search: { post: undefined } })}
           />
         </section>
       )}

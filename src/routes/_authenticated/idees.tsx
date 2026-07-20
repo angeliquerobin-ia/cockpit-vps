@@ -1,26 +1,27 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { aiSplitIdeas, aiOcrImages } from "@/lib/ai-writer.functions";
+import { PublishDialog } from "@/components/publish-dialog";
 import {
   Plus,
   Pencil,
   Trash2,
-  ArrowRight,
-  Check,
   X,
-  Filter,
-  Sparkles,
-  Scissors,
-  GripVertical,
-  ImagePlus,
   Search,
+  GripVertical,
+  Sparkles,
+  ListPlus,
+  Save,
+  Send,
+  CalendarClock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/idees")({
-  head: () => ({ meta: [{ title: "Idées — Cockpit" }] }),
-  component: IdeasPage,
+  head: () => ({ meta: [{ title: "Studio de Création — Cockpit" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    post: typeof s.post === "string" ? s.post : undefined,
+  }),
+  component: StudioCreationPage,
 });
 
 type Channel =
@@ -30,17 +31,23 @@ type Channel =
   | "podcast"
   | "substack";
 
-type Status = "brouillon" | "a_developper" | "prete";
+type Status = "idee" | "en_redaction" | "pret" | "programme" | "publie";
 
 type Pillar = { id: string; name: string; color: string };
 
-type Idea = {
+type BoardColumn = { id: string; name: string; position: number };
+
+type Post = {
   id: string;
   title: string;
-  note: string;
-  pillar_id: string | null;
+  content: string;
   channel: Channel | null;
+  pillar_id: string | null;
   status: Status;
+  scheduled_at: string | null;
+  board_column_id: string | null;
+  board_position: number;
+  video_url: string | null;
   created_at: string;
 };
 
@@ -52,81 +59,85 @@ const CHANNELS: { value: Channel; label: string }[] = [
 ];
 
 const STATUSES: { value: Status; label: string }[] = [
-  { value: "brouillon", label: "Brouillon" },
-  { value: "a_developper", label: "À développer" },
-  { value: "prete", label: "Prête" },
+  { value: "idee", label: "Idée" },
+  { value: "en_redaction", label: "En rédaction" },
+  { value: "pret", label: "Prêt" },
+  { value: "programme", label: "Programmé" },
+  { value: "publie", label: "Publié" },
 ];
 
-const PILLAR_COLORS = [
-  "#cdb48e",
-  "#b87b5a",
-  "#9c6b4f",
-  "#6f7a5b",
-  "#5b6e7a",
-  "#a07c9c",
-  "#c98a6b",
-  "#7a8a6f",
-];
+const POST_SELECT =
+  "id,title,content,channel,pillar_id,status,scheduled_at,board_column_id,board_position,video_url,created_at";
 
-const channelLabel = (c: Channel | null) => (c ? CHANNELS.find((x) => x.value === c)?.label : null);
+const channelLabel = (c: Channel | null) =>
+  c ? (CHANNELS.find((x) => x.value === c)?.label ?? "Instagram") : null;
 const statusLabel = (s: Status) => STATUSES.find((x) => x.value === s)?.label ?? s;
 
-function IdeasPage() {
+const UNSORTED_KEY = "__none__";
+const colKeyOf = (id: string | null) => id ?? UNSORTED_KEY;
+
+function StudioCreationPage() {
   const navigate = useNavigate();
-  const splitIdeasFn = useServerFn(aiSplitIdeas);
-  const ocrImagesFn = useServerFn(aiOcrImages);
+  const { post: postParam } = Route.useSearch();
   const [userId, setUserId] = useState<string | null>(null);
   const [pillars, setPillars] = useState<Pillar[]>([]);
-  const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [quickTitle, setQuickTitle] = useState("");
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [columns, setColumns] = useState<BoardColumn[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Bulk import
+  const [quickTitle, setQuickTitle] = useState("");
+
+  // Ajout multi-cartes (1 ligne = 1 carte), sans IA
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState("");
-  const [splitting, setSplitting] = useState(false);
-  const [splitError, setSplitError] = useState<string | null>(null);
-  const [ocrLoading, setOcrLoading] = useState(false);
 
-  // filters (sur le kanban)
+  // Filtres
   const [fChannel, setFChannel] = useState<string>("all");
-  const [fStatus, setFStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
 
-  // édition d'une colonne (pilier)
+  // Renommage de colonne
   const [editingColId, setEditingColId] = useState<string | null>(null);
   const [editingColName, setEditingColName] = useState("");
-
-  // DnD
-  const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
-
-  // Nouvelle colonne (= nouveau pilier)
   const [newColName, setNewColName] = useState("");
-  const [newColColor, setNewColColor] = useState(PILLAR_COLORS[0]);
   const [addingCol, setAddingCol] = useState(false);
+
+  // DnD cartes
+  const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ col: string; index: number } | null>(null);
+
+  // DnD colonnes
+  const [draggedColId, setDraggedColId] = useState<string | null>(null);
+  const [dragOverColId, setDragOverColId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
   async function loadAll(uid: string) {
-    const [p, i] = await Promise.all([
+    const [p, c, i] = await Promise.all([
       supabase
         .from("content_pillars")
         .select("id,name,color")
         .eq("user_id", uid)
         .order("created_at", { ascending: true }),
       supabase
-        .from("ideas")
-        .select("id,title,note,pillar_id,channel,status,created_at")
+        .from("board_columns")
+        .select("id,name,position")
         .eq("user_id", uid)
+        .order("position", { ascending: true }),
+      supabase
+        .from("posts")
+        .select(POST_SELECT)
+        .eq("user_id", uid)
+        .eq("location" as any, "creation")
         .is("deleted_at", null)
+        .is("scheduled_at", null)
+        .order("board_position", { ascending: true })
         .order("created_at", { ascending: false }),
     ]);
     setPillars((p.data ?? []) as Pillar[]);
-    setIdeas((i.data ?? []) as Idea[]);
+    setColumns((c.data ?? []) as BoardColumn[]);
+    setPosts((i.data ?? []) as Post[]);
     setLoading(false);
   }
 
@@ -140,233 +151,183 @@ function IdeasPage() {
     const title = quickTitle.trim();
     setQuickTitle("");
     const { data } = await supabase
-      .from("ideas")
-      .insert({ user_id: userId, title })
-      .select("id,title,note,pillar_id,channel,status,created_at")
+      .from("posts")
+      .insert({ user_id: userId, title, content: "", status: "idee" } as any)
+      .select(POST_SELECT)
       .single();
-    if (data) setIdeas((prev) => [data as Idea, ...prev]);
+    if (data) setPosts((prev) => [data as Post, ...prev]);
   }
 
-  async function updateIdea(id: string, patch: Partial<Idea>) {
-    setIdeas((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
-    await supabase.from("ideas").update(patch).eq("id", id);
+  async function runBulk() {
+    if (!userId || !bulkText.trim()) return;
+    const lines = bulkText
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (lines.length === 0) return;
+    const rows = lines.map((title) => ({
+      user_id: userId,
+      title,
+      content: "",
+      status: "idee",
+    }));
+    const { data } = await supabase
+      .from("posts")
+      .insert(rows as any)
+      .select(POST_SELECT);
+    if (data) {
+      setPosts((prev) => [...(data as Post[]), ...prev]);
+      setBulkText("");
+      setBulkOpen(false);
+    }
   }
 
-  async function removeIdea(id: string) {
-    if (!confirm("Mettre cette idée à la corbeille ?")) return;
-    setIdeas((prev) => prev.filter((i) => i.id !== id));
+  async function removePost(id: string) {
+    if (!confirm("Mettre cette carte à la corbeille ?")) return;
+    setPosts((prev) => prev.filter((p) => p.id !== id));
     await supabase
-      .from("ideas")
+      .from("posts")
       .update({ deleted_at: new Date().toISOString() } as any)
       .eq("id", id);
   }
 
-  async function runSplit() {
-    if (!userId || !bulkText.trim()) return;
-    setSplitting(true);
-    setSplitError(null);
-    try {
-      const res = await splitIdeasFn({ data: { text: bulkText } });
-      const list = res.ideas ?? [];
-      if (list.length === 0) {
-        setSplitError("Aucune idée identifiée dans ce texte.");
-      } else {
-        const rows = list.map((s) => ({
-          user_id: userId,
-          title: s.title,
-          note: s.angle,
-          pillar_id: s.pillar_id,
-          channel: s.channel,
-        }));
-        const { data } = await supabase
-          .from("ideas")
-          .insert(rows as any)
-          .select("id,title,note,pillar_id,channel,status,created_at");
-        if (data) {
-          setIdeas((prev) => [...(data as Idea[]), ...prev]);
-          setBulkText("");
-          setBulkOpen(false);
-        }
-      }
-    } catch (e: any) {
-      setSplitError(e?.message ?? "Erreur lors de la scission");
-    } finally {
-      setSplitting(false);
-    }
-  }
-
-  async function runOcr(files: FileList | null) {
-    if (!files || files.length === 0) return;
-    setOcrLoading(true);
-    setSplitError(null);
-    try {
-      const list = Array.from(files).slice(0, 8);
-      const images = await Promise.all(
-        list.map(
-          (file) =>
-            new Promise<{ dataUrl: string }>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve({ dataUrl: reader.result as string });
-              reader.onerror = () => reject(reader.error);
-              reader.readAsDataURL(file);
-            }),
-        ),
-      );
-      const res = await ocrImagesFn({ data: { images } });
-      const extracted = (res.text ?? "").trim();
-      if (!extracted) {
-        setSplitError("Aucun texte n'a pu être lu sur cette image.");
-      } else {
-        setBulkText((prev) => (prev.trim() ? `${prev.trim()}\n\n${extracted}` : extracted));
-        setBulkOpen(true);
-      }
-    } catch (e: any) {
-      setSplitError(e?.message ?? "Erreur lors de la retranscription");
-    } finally {
-      setOcrLoading(false);
-    }
-  }
-
-  async function transformToPost(idea: Idea) {
-    if (!userId) return;
-    const { data } = await supabase
-      .from("posts")
-      .insert({
-        user_id: userId,
-        title: idea.title,
-        content: idea.note ?? "",
-        pillar_id: idea.pillar_id,
-        channel: idea.channel,
-        status: "en_redaction",
-      })
-      .select("id")
-      .single();
-    if (!data) return;
-    await supabase
-      .from("ideas")
-      .update({ deleted_at: new Date().toISOString() } as any)
-      .eq("id", idea.id);
-    setIdeas((prev) => prev.filter((i) => i.id !== idea.id));
-    navigate({ to: "/studio", search: { post: data.id } });
-  }
-
+  // ------- Colonnes (board_columns) -------
   async function addColumn(e: React.FormEvent) {
     e.preventDefault();
     if (!userId || !newColName.trim()) return;
     setAddingCol(true);
+    const position = columns.length;
     const { data } = await supabase
-      .from("content_pillars")
-      .insert({
-        user_id: userId,
-        name: newColName.trim(),
-        color: newColColor,
-      } as any)
-      .select("id,name,color")
+      .from("board_columns")
+      .insert({ user_id: userId, name: newColName.trim(), position } as any)
+      .select("id,name,position")
       .single();
     if (data) {
-      setPillars((prev) => [...prev, data as Pillar]);
+      setColumns((prev) => [...prev, data as BoardColumn]);
       setNewColName("");
-      setNewColColor(PILLAR_COLORS[(pillars.length + 1) % PILLAR_COLORS.length]);
     }
     setAddingCol(false);
   }
 
-  async function renamePillar(id: string, name: string) {
+  async function renameColumn(id: string, name: string) {
     const trimmed = name.trim();
-    if (!trimmed) return;
-    setPillars((prev) => prev.map((p) => (p.id === id ? { ...p, name: trimmed } : p)));
     setEditingColId(null);
-    await supabase.from("content_pillars").update({ name: trimmed }).eq("id", id);
+    if (!trimmed) return;
+    setColumns((prev) => prev.map((c) => (c.id === id ? { ...c, name: trimmed } : c)));
+    await supabase.from("board_columns").update({ name: trimmed }).eq("id", id);
   }
 
-  async function recolorPillar(id: string, color: string) {
-    setPillars((prev) => prev.map((p) => (p.id === id ? { ...p, color } : p)));
-    await supabase.from("content_pillars").update({ color }).eq("id", id);
-  }
-
-  async function deletePillar(id: string) {
-    const count = ideas.filter((i) => i.pillar_id === id).length;
+  async function deleteColumn(id: string) {
+    const count = posts.filter((p) => p.board_column_id === id).length;
     const msg = count
-      ? `Supprimer ce pilier ? Les ${count} idée(s) associée(s) seront déplacées vers « À ranger ».`
-      : "Supprimer ce pilier ?";
+      ? `Supprimer cette colonne ? Les ${count} carte(s) repartiront dans « À ranger ».`
+      : "Supprimer cette colonne ?";
     if (!confirm(msg)) return;
-    setIdeas((prev) => prev.map((i) => (i.pillar_id === id ? { ...i, pillar_id: null } : i)));
-    setPillars((prev) => prev.filter((p) => p.id !== id));
-    await supabase.from("ideas").update({ pillar_id: null }).eq("pillar_id", id);
-    await supabase.from("content_pillars").delete().eq("id", id);
+    setPosts((prev) =>
+      prev.map((p) => (p.board_column_id === id ? { ...p, board_column_id: null } : p)),
+    );
+    setColumns((prev) => prev.filter((c) => c.id !== id));
+    await supabase.from("posts").update({ board_column_id: null }).eq("board_column_id", id);
+    await supabase.from("board_columns").delete().eq("id", id);
   }
 
-  async function moveIdeaTo(ideaId: string, pillarId: string | null) {
-    const current = ideas.find((i) => i.id === ideaId);
-    if (!current || current.pillar_id === pillarId) return;
-    await updateIdea(ideaId, { pillar_id: pillarId });
+  async function persistColumnOrder(next: BoardColumn[]) {
+    const renumbered = next.map((c, idx) => ({ ...c, position: idx }));
+    setColumns(renumbered);
+    await Promise.all(
+      renumbered.map((c) =>
+        supabase.from("board_columns").update({ position: c.position }).eq("id", c.id),
+      ),
+    );
   }
 
-  function onDragStart(e: React.DragEvent, ideaId: string) {
-    setDraggedId(ideaId);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", ideaId);
+  function moveColumn(colId: string, targetColId: string) {
+    if (colId === targetColId) return;
+    const from = columns.findIndex((c) => c.id === colId);
+    const to = columns.findIndex((c) => c.id === targetColId);
+    if (from < 0 || to < 0) return;
+    const next = [...columns];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    persistColumnOrder(next);
   }
 
-  function onColDragOver(e: React.DragEvent, colId: string) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    if (dragOverCol !== colId) setDragOverCol(colId);
-  }
+  // ------- Déplacement des cartes -------
+  async function moveCard(cardId: string, targetColKey: string, targetIndex: number) {
+    const targetColId = targetColKey === UNSORTED_KEY ? null : targetColKey;
+    const card = posts.find((p) => p.id === cardId);
+    if (!card) return;
 
-  function onColDrop(e: React.DragEvent, pillarId: string | null) {
-    e.preventDefault();
-    const id = draggedId ?? e.dataTransfer.getData("text/plain");
-    setDraggedId(null);
-    setDragOverCol(null);
-    if (id) moveIdeaTo(id, pillarId);
+    // Liste cible sans la carte déplacée, dans l'ordre courant
+    const targetList = posts
+      .filter((p) => colKeyOf(p.board_column_id) === targetColKey && p.id !== cardId)
+      .sort((a, b) => a.board_position - b.board_position);
+    const clamped = Math.max(0, Math.min(targetIndex, targetList.length));
+    targetList.splice(clamped, 0, { ...card, board_column_id: targetColId });
+
+    const reindexed = new Map(targetList.map((p, idx) => [p.id, idx]));
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id === cardId) return { ...p, board_column_id: targetColId, board_position: reindexed.get(p.id)! };
+        if (reindexed.has(p.id)) return { ...p, board_position: reindexed.get(p.id)! };
+        return p;
+      }),
+    );
+
+    await Promise.all(
+      targetList.map((p, idx) =>
+        supabase
+          .from("posts")
+          .update({ board_column_id: targetColId, board_position: idx })
+          .eq("id", p.id),
+      ),
+    );
   }
 
   const pillarById = useMemo(() => Object.fromEntries(pillars.map((p) => [p.id, p])), [pillars]);
 
-  const filteredIdeas = useMemo(() => {
+  const filteredPosts = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return ideas.filter((i) => {
-      if (fChannel !== "all" && i.channel !== fChannel) return false;
-      if (fStatus !== "all" && i.status !== fStatus) return false;
+    return posts.filter((p) => {
+      if (fChannel !== "all" && p.channel !== fChannel) return false;
       if (q) {
-        const hay = `${i.title} ${i.note ?? ""}`.toLowerCase();
+        const hay = `${p.title} ${p.content ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
     });
-  }, [ideas, fChannel, fStatus, search]);
+  }, [posts, fChannel, search]);
 
-  const columns: { id: string | null; name: string; color: string }[] = [
-    ...pillars.map((p) => ({ id: p.id, name: p.name, color: p.color })),
-    { id: null, name: "À ranger", color: "#8a8276" },
+  const renderColumns: { id: string | null; name: string; fixed: boolean }[] = [
+    { id: null, name: "À ranger", fixed: true },
+    ...columns.map((c) => ({ id: c.id, name: c.name, fixed: false })),
   ];
 
-  const ideasByCol = useMemo(() => {
-    const map = new Map<string, Idea[]>();
-    for (const col of columns) {
-      map.set(col.id ?? "__none__", []);
+  const postsByCol = useMemo(() => {
+    const map = new Map<string, Post[]>();
+    for (const col of renderColumns) map.set(colKeyOf(col.id), []);
+    for (const post of filteredPosts) {
+      const key = colKeyOf(post.board_column_id);
+      if (!map.has(key)) map.set(UNSORTED_KEY, map.get(UNSORTED_KEY) ?? []);
+      (map.get(key) ?? map.get(UNSORTED_KEY))!.push(post);
     }
-    for (const idea of filteredIdeas) {
-      const key = idea.pillar_id ?? "__none__";
-      if (!map.has(key)) map.set("__none__", map.get("__none__") ?? []);
-      (map.get(key) ?? map.get("__none__"))!.push(idea);
-    }
+    for (const list of map.values()) list.sort((a, b) => a.board_position - b.board_position);
     return map;
-  }, [filteredIdeas, columns]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredPosts, columns]);
 
   return (
     <div className="space-y-10">
       <header className="space-y-2">
-        <p className="text-xs uppercase tracking-[0.2em] opacity-60">Réservoir d'inspirations</p>
-        <h1 className="text-5xl">Idées</h1>
+        <p className="text-xs uppercase tracking-[0.2em] opacity-60">L'atelier des contenus</p>
+        <h1 className="text-5xl">Studio de Création</h1>
         <p className="tagline text-base max-w-2xl">
-          Capturez chaque étincelle, scindez vos braindumps en cartes, glissez-les de pilier en
-          pilier.
+          Capturez une étincelle, rédigez-la dans la carte, glissez-la de colonne en colonne. Datez
+          une carte et elle part se ranger dans le calendrier éditorial.
         </p>
       </header>
 
-      {/* Quick capture — « Une nouvelle étincelle ? » */}
+      {/* Capture rapide */}
       <section className="space-y-2">
         <p className="text-xs uppercase tracking-[0.2em] opacity-60">Une nouvelle étincelle ?</p>
         <form
@@ -383,7 +344,7 @@ function IdeasPage() {
           <button
             type="submit"
             disabled={!quickTitle.trim()}
-            aria-label="Ajouter l'idée"
+            aria-label="Ajouter la carte"
             className="h-10 w-10 shrink-0 grid place-items-center rounded-xl bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-opacity"
           >
             <Plus className="h-5 w-5" />
@@ -391,18 +352,17 @@ function IdeasPage() {
         </form>
       </section>
 
-      {/* Bulk split */}
+      {/* Ajout multi-cartes — 1 ligne = 1 carte (sans IA) */}
       <section className="bg-card rounded-2xl p-5 shadow-[var(--shadow-soft)] space-y-3">
         <button
           onClick={() => setBulkOpen((v) => !v)}
           className="w-full flex items-center gap-3 text-left"
         >
-          <Scissors className="h-5 w-5 text-primary shrink-0" />
+          <ListPlus className="h-5 w-5 text-primary shrink-0" />
           <div className="flex-1">
-            <h2 className="text-2xl">Scinder un texte en idées</h2>
+            <h2 className="text-2xl">Ajouter plusieurs idées d'un coup</h2>
             <p className="tagline text-sm">
-              Collez un braindump, un vocal retranscrit, une note brute — l'app en extrait une carte
-              par idée.
+              Collez une liste : chaque ligne devient une carte rangée dans « À ranger ».
             </p>
           </div>
           <span className="text-xs opacity-60">{bulkOpen ? "Replier" : "Ouvrir"}</span>
@@ -414,79 +374,49 @@ function IdeasPage() {
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
               rows={8}
-              placeholder="Collez ici un texte contenant plusieurs idées mélangées. L'agent les séparera en cartes distinctes et les rangera dans le bon pilier quand c'est évident."
+              placeholder={"Une idée par ligne…\nExemple : Repenser mon offre signature\nExemple : Épisode podcast sur la solitude entrepreneuriale"}
               className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-y leading-relaxed"
             />
-            {splitError && <p className="text-sm text-destructive">{splitError}</p>}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <label className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors">
-                <ImagePlus className="h-4 w-4 text-primary" />
-                {ocrLoading ? "Retranscription en cours…" : "Ajouter une photo de texte"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  capture="environment"
-                  disabled={ocrLoading}
-                  onChange={(e) => {
-                    runOcr(e.target.files);
-                    e.target.value = "";
-                  }}
-                  className="hidden"
-                />
-              </label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setBulkText("");
-                    setSplitError(null);
-                  }}
-                  className="rounded-lg px-3 py-2 text-sm hover:bg-muted transition-colors"
-                >
-                  Effacer
-                </button>
-                <button
-                  onClick={runSplit}
-                  disabled={splitting || !bulkText.trim()}
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
-                >
-                  <Scissors className="h-4 w-4" />
-                  {splitting ? "Scission en cours…" : "Scinder en idées"}
-                </button>
-              </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setBulkText("")}
+                className="rounded-lg px-3 py-2 text-sm hover:bg-muted transition-colors"
+              >
+                Effacer
+              </button>
+              <button
+                onClick={runBulk}
+                disabled={!bulkText.trim()}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+              >
+                <ListPlus className="h-4 w-4" /> Créer les cartes
+              </button>
             </div>
           </div>
         )}
       </section>
 
-      {/* Filters */}
+      {/* Filtres */}
       <div className="flex items-center gap-3 flex-wrap">
-        <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.15em] opacity-70">
-          <Filter className="h-3.5 w-3.5" /> Filtrer
-        </span>
-        <FilterSelect
+        <select
           value={fChannel}
-          onChange={setFChannel}
-          options={[
-            { value: "all", label: "Tous les canaux" },
-            ...CHANNELS.map((c) => ({ value: c.value, label: c.label })),
-          ]}
-        />
-        <FilterSelect
-          value={fStatus}
-          onChange={setFStatus}
-          options={[
-            { value: "all", label: "Tous les statuts" },
-            ...STATUSES.map((s) => ({ value: s.value, label: s.label })),
-          ]}
-        />
+          onChange={(e) => setFChannel(e.target.value)}
+          className="rounded-lg bg-card border border-border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="all">Tous les canaux</option>
+          {CHANNELS.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
+          ))}
+        </select>
         <label className="inline-flex items-center gap-2 rounded-lg bg-background border border-input px-3 py-1.5 text-sm focus-within:ring-2 focus-within:ring-ring">
           <Search className="h-3.5 w-3.5 opacity-60" />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher par mot-clé…"
+            placeholder="Rechercher…"
             className="bg-transparent outline-none w-48 placeholder:opacity-50"
           />
           {search && (
@@ -508,45 +438,71 @@ function IdeasPage() {
       ) : (
         <div className="-mx-2 overflow-x-auto pb-4">
           <div className="flex gap-4 px-2 min-w-min items-start">
-            {columns.map((col) => {
-              const colKey = col.id ?? "__none__";
-              const list = ideasByCol.get(colKey) ?? [];
-              const isOver = dragOverCol === colKey;
+            {renderColumns.map((col) => {
+              const key = colKeyOf(col.id);
+              const list = postsByCol.get(key) ?? [];
+              const isColDragTarget = !col.fixed && dragOverColId === col.id && draggedColId;
               return (
                 <div
-                  key={colKey}
-                  onDragOver={(e) => onColDragOver(e, colKey)}
-                  onDragLeave={() => setDragOverCol(null)}
-                  onDrop={(e) => onColDrop(e, col.id)}
+                  key={key}
+                  onDragOver={(e) => {
+                    // réordonnancement de colonne
+                    if (draggedColId && !col.fixed) {
+                      e.preventDefault();
+                      setDragOverColId(col.id);
+                      return;
+                    }
+                    // dépôt d'une carte en fin de colonne
+                    if (draggedCardId) {
+                      e.preventDefault();
+                      setDropTarget({ col: key, index: list.length });
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggedColId && !col.fixed) {
+                      moveColumn(draggedColId, col.id!);
+                      setDraggedColId(null);
+                      setDragOverColId(null);
+                      return;
+                    }
+                    if (draggedCardId && dropTarget) {
+                      moveCard(draggedCardId, dropTarget.col, dropTarget.index);
+                    }
+                    setDraggedCardId(null);
+                    setDropTarget(null);
+                  }}
                   className={`w-[300px] shrink-0 rounded-2xl p-3 transition-colors ${
-                    isOver ? "bg-muted/80" : "bg-card/60"
-                  } shadow-[var(--shadow-soft)]`}
+                    isColDragTarget ? "ring-2 ring-primary/40" : ""
+                  } ${dropTarget?.col === key && draggedCardId ? "bg-muted/70" : "bg-card/60"} shadow-[var(--shadow-soft)]`}
                 >
-                  <div className="flex items-center gap-2 px-2 pb-3 group">
-                    {col.id ? (
-                      <input
-                        type="color"
-                        value={col.color}
-                        onChange={(e) => recolorPillar(col.id!, e.target.value)}
-                        aria-label="Couleur du pilier"
-                        className="h-3 w-3 rounded-full border-0 p-0 bg-transparent cursor-pointer appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0"
-                        style={{ backgroundColor: col.color }}
-                      />
+                  {/* En-tête de colonne */}
+                  <div
+                    className="flex items-center gap-2 px-1 pb-3 group"
+                    draggable={!col.fixed && editingColId !== col.id}
+                    onDragStart={(e) => {
+                      if (col.fixed) return;
+                      setDraggedColId(col.id);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragEnd={() => {
+                      setDraggedColId(null);
+                      setDragOverColId(null);
+                    }}
+                  >
+                    {!col.fixed ? (
+                      <GripVertical className="h-4 w-4 opacity-30 shrink-0 cursor-grab active:cursor-grabbing" />
                     ) : (
-                      <span
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: col.color }}
-                        aria-hidden
-                      />
+                      <span className="w-1.5 h-4 rounded-full bg-primary/40 shrink-0" aria-hidden />
                     )}
-                    {col.id && editingColId === col.id ? (
+                    {!col.fixed && editingColId === col.id ? (
                       <input
                         autoFocus
                         value={editingColName}
                         onChange={(e) => setEditingColName(e.target.value)}
-                        onBlur={() => renamePillar(col.id!, editingColName)}
+                        onBlur={() => renameColumn(col.id!, editingColName)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") renamePillar(col.id!, editingColName);
+                          if (e.key === "Enter") renameColumn(col.id!, editingColName);
                           if (e.key === "Escape") setEditingColId(null);
                         }}
                         className="flex-1 min-w-0 rounded-md bg-background border border-input px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -555,7 +511,7 @@ function IdeasPage() {
                       <h3 className="text-base flex-1 truncate">{col.name}</h3>
                     )}
                     <span className="text-xs opacity-60 tabular-nums">{list.length}</span>
-                    {col.id && editingColId !== col.id && (
+                    {!col.fixed && editingColId !== col.id && (
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           type="button"
@@ -563,15 +519,15 @@ function IdeasPage() {
                             setEditingColId(col.id);
                             setEditingColName(col.name);
                           }}
-                          aria-label="Renommer le pilier"
+                          aria-label="Renommer la colonne"
                           className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-muted"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           type="button"
-                          onClick={() => deletePillar(col.id!)}
-                          aria-label="Supprimer le pilier"
+                          onClick={() => deleteColumn(col.id!)}
+                          aria-label="Supprimer la colonne"
                           className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-destructive/10 text-destructive"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -580,46 +536,47 @@ function IdeasPage() {
                     )}
                   </div>
 
+                  {/* Cartes */}
                   <div className="space-y-2 min-h-[60px]">
                     {list.length === 0 ? (
                       <p className="text-xs opacity-50 italic px-2 py-3">Glissez une carte ici.</p>
                     ) : (
-                      list.map((idea) =>
-                        editingId === idea.id ? (
-                          <IdeaEditor
-                            key={idea.id}
-                            idea={idea}
-                            pillars={pillars}
-                            onCancel={() => setEditingId(null)}
-                            onSave={async (patch) => {
-                              await updateIdea(idea.id, patch);
-                              setEditingId(null);
-                            }}
-                          />
-                        ) : (
-                          <IdeaCard
-                            key={idea.id}
-                            idea={idea}
-                            pillar={idea.pillar_id ? pillarById[idea.pillar_id] : undefined}
-                            onDragStart={(e) => onDragStart(e, idea.id)}
-                            onDragEnd={() => {
-                              setDraggedId(null);
-                              setDragOverCol(null);
-                            }}
-                            dragging={draggedId === idea.id}
-                            onEdit={() => setEditingId(idea.id)}
-                            onDelete={() => removeIdea(idea.id)}
-                            onTransform={() => transformToPost(idea)}
-                          />
-                        ),
-                      )
+                      list.map((post, index) => (
+                        <PostCard
+                          key={post.id}
+                          post={post}
+                          channelName={channelLabel(post.channel)}
+                          dragging={draggedCardId === post.id}
+                          showDropLine={
+                            dropTarget?.col === key && dropTarget.index === index && !!draggedCardId
+                          }
+                          onDragStart={(e) => {
+                            setDraggedCardId(post.id);
+                            e.dataTransfer.effectAllowed = "move";
+                          }}
+                          onDragEnd={() => {
+                            setDraggedCardId(null);
+                            setDropTarget(null);
+                          }}
+                          onDragOverCard={(e) => {
+                            if (!draggedCardId) return;
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            const after = e.clientY - rect.top > rect.height / 2;
+                            setDropTarget({ col: key, index: index + (after ? 1 : 0) });
+                          }}
+                          onOpen={() => navigate({ to: "/idees", search: { post: post.id } })}
+                          onDelete={() => removePost(post.id)}
+                        />
+                      ))
                     )}
                   </div>
                 </div>
               );
             })}
 
-            {/* Add column = add pillar */}
+            {/* Nouvelle colonne */}
             <form
               onSubmit={addColumn}
               className="w-[260px] shrink-0 rounded-2xl p-4 bg-card/40 border border-dashed border-border space-y-3"
@@ -631,23 +588,9 @@ function IdeasPage() {
               <input
                 value={newColName}
                 onChange={(e) => setNewColName(e.target.value)}
-                placeholder="Nom du pilier"
+                placeholder="Nom de la colonne"
                 className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              <div className="flex flex-wrap gap-1.5">
-                {PILLAR_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setNewColColor(c)}
-                    aria-label={`Couleur ${c}`}
-                    className={`h-6 w-6 rounded-full transition-transform ${
-                      newColColor === c ? "ring-2 ring-foreground/60 scale-110" : ""
-                    }`}
-                    style={{ backgroundColor: c }}
-                  />
-                ))}
-              </div>
               <button
                 type="submit"
                 disabled={addingCol || !newColName.trim()}
@@ -656,221 +599,361 @@ function IdeasPage() {
                 {addingCol ? "Ajout…" : "Ajouter la colonne"}
               </button>
               <p className="text-xs opacity-60 leading-relaxed">
-                <em>
-                  Une colonne = un pilier. Vous pourrez l'éditer en détail depuis la Stratégie.
-                </em>
+                <em>Les colonnes sont libres et n'ont aucun lien avec vos piliers éditoriaux.</em>
               </p>
             </form>
           </div>
         </div>
       )}
+
+      {postParam && userId && (
+        <PostEditorModal
+          postId={postParam}
+          userId={userId}
+          pillars={pillars}
+          onClose={() => {
+            navigate({ to: "/idees", search: { post: undefined } });
+            loadAll(userId);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-function FilterSelect({
-  value,
-  onChange,
-  options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="rounded-lg bg-card border border-border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-    >
-      {options.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  );
-}
-
-function StatusChip({ status }: { status: Status }) {
-  return (
-    <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-muted text-foreground/80">
-      {statusLabel(status)}
-    </span>
-  );
-}
-
-function IdeaCard({
-  idea,
-  pillar,
-  onEdit,
-  onDelete,
-  onTransform,
+function PostCard({
+  post,
+  channelName,
+  dragging,
+  showDropLine,
   onDragStart,
   onDragEnd,
-  dragging,
+  onDragOverCard,
+  onOpen,
+  onDelete,
 }: {
-  idea: Idea;
-  pillar?: Pillar;
-  onEdit: () => void;
-  onDelete: () => void;
-  onTransform: () => void;
+  post: Post;
+  channelName: string | null;
+  dragging: boolean;
+  showDropLine: boolean;
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
-  dragging: boolean;
+  onDragOverCard: (e: React.DragEvent) => void;
+  onOpen: () => void;
+  onDelete: () => void;
 }) {
+  const preview = post.content.trim().slice(0, 160);
   return (
-    <article
-      draggable
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      className={`bg-card rounded-xl shadow-[var(--shadow-soft)] p-3 space-y-2 group cursor-grab active:cursor-grabbing transition-opacity ${
-        dragging ? "opacity-40" : ""
-      }`}
-      style={{
-        borderLeft: `3px solid ${pillar?.color ?? "#8a8276"}`,
-      }}
-    >
-      <div className="flex items-start gap-2">
-        <GripVertical className="h-4 w-4 mt-0.5 opacity-30 shrink-0" />
-        <h3 className="text-sm leading-snug flex-1">{idea.title}</h3>
-        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={onEdit}
-            aria-label="Modifier"
-            className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-foreground/70"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={onDelete}
-            aria-label="Supprimer"
-            className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-foreground/70"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+    <>
+      {showDropLine && <div className="h-0.5 rounded-full bg-primary/70 mx-1" />}
+      <article
+        draggable
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={onDragOverCard}
+        onClick={onOpen}
+        className={`bg-card rounded-xl shadow-[var(--shadow-soft)] p-3 space-y-2 group cursor-pointer transition-opacity ${
+          dragging ? "opacity-40" : ""
+        }`}
+      >
+        <div className="flex items-start gap-2">
+          <GripVertical className="h-4 w-4 mt-0.5 opacity-30 shrink-0 cursor-grab active:cursor-grabbing" />
+          <h3 className="text-sm leading-snug flex-1">
+            {post.title.trim() || <span className="opacity-50 italic">Sans titre</span>}
+          </h3>
+          <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpen();
+              }}
+              aria-label="Ouvrir"
+              className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-foreground/70"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              aria-label="Supprimer"
+              className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-foreground/70"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
-      </div>
 
-      {idea.note && (
-        <p className="text-xs opacity-70 leading-relaxed pl-6 line-clamp-3">{idea.note}</p>
-      )}
+        {preview && <p className="text-xs opacity-70 leading-relaxed pl-6 line-clamp-3">{preview}</p>}
 
-      <div className="flex items-center gap-1.5 flex-wrap pl-6">
-        {idea.channel && (
-          <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-popover text-foreground/70">
-            {channelLabel(idea.channel)}
+        <div className="flex items-center gap-1.5 flex-wrap pl-6">
+          {channelName && (
+            <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-popover text-foreground/70">
+              {channelName}
+            </span>
+          )}
+          <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-muted text-foreground/80">
+            {statusLabel(post.status)}
           </span>
-        )}
-        <StatusChip status={idea.status} />
-      </div>
-
-      <div className="pl-6 pt-1">
-        <button
-          type="button"
-          onClick={onTransform}
-          className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-        >
-          Transformer en post <ArrowRight className="h-3 w-3" />
-        </button>
-      </div>
-    </article>
+        </div>
+      </article>
+    </>
   );
 }
 
-function IdeaEditor({
-  idea,
+function toLocalInput(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function PostEditorModal({
+  postId,
+  userId,
   pillars,
-  onCancel,
-  onSave,
+  onClose,
 }: {
-  idea: Idea;
+  postId: string;
+  userId: string;
   pillars: Pillar[];
-  onCancel: () => void;
-  onSave: (patch: Partial<Idea>) => void | Promise<void>;
+  onClose: () => void;
 }) {
-  const [title, setTitle] = useState(idea.title);
-  const [note, setNote] = useState(idea.note);
-  const [pillarId, setPillarId] = useState<string>(idea.pillar_id ?? "");
-  const [channel, setChannel] = useState<string>(idea.channel ?? "");
-  const [status, setStatus] = useState<Status>(idea.status);
+  const [post, setPost] = useState<Post | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [channel, setChannel] = useState<string>("");
+  const [pillarId, setPillarId] = useState<string>("");
+  const [status, setStatus] = useState<Status>("en_redaction");
+  const [scheduledAt, setScheduledAt] = useState<string>("");
+  const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
+  const [showPublish, setShowPublish] = useState(false);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("posts")
+        .select(POST_SELECT)
+        .eq("id", postId)
+        .maybeSingle();
+      if (!active) return;
+      if (!data) {
+        setNotFound(true);
+        return;
+      }
+      const p = data as Post;
+      setPost(p);
+      setTitle(p.title);
+      setContent(p.content);
+      setChannel(p.channel ?? "");
+      setPillarId(p.pillar_id ?? "");
+      setStatus(p.status);
+      setScheduledAt(p.scheduled_at ? toLocalInput(p.scheduled_at) : "");
+    })();
+    return () => {
+      active = false;
+    };
+  }, [postId]);
+
+  async function handleSave() {
+    if (!post) return;
+    setSaving("saving");
+    const patch = {
+      title,
+      content,
+      channel: (channel || null) as Channel | null,
+      pillar_id: pillarId || null,
+      status,
+      scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+    };
+    await supabase.from("posts").update(patch as any).eq("id", post.id);
+    setPost({ ...post, ...(patch as any) });
+    setSaving("saved");
+    setTimeout(() => setSaving("idle"), 1500);
+  }
+
+  const pillar = pillarId ? pillars.find((p) => p.id === pillarId) : undefined;
+  const willLeaveBoard = !!scheduledAt;
 
   return (
-    <div className="bg-popover rounded-xl shadow-[var(--shadow-soft)] p-3 space-y-2">
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Titre"
-        className="w-full bg-background rounded-lg border border-input px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-      />
-      <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        rows={3}
-        placeholder="Note libre…"
-        className="w-full bg-background rounded-lg border border-input px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-      />
+    <div
+      className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-card rounded-2xl shadow-[var(--shadow-soft)] w-full max-w-3xl my-8 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="h-1.5" style={{ backgroundColor: pillar?.color ?? "#cdb48e" }} />
 
-      <div className="grid grid-cols-1 gap-1.5">
-        <select
-          value={pillarId}
-          onChange={(e) => setPillarId(e.target.value)}
-          className="rounded-lg bg-background border border-input px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="">— Pilier —</option>
-          {pillars.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={channel}
-          onChange={(e) => setChannel(e.target.value)}
-          className="rounded-lg bg-background border border-input px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="">— Canal —</option>
-          {CHANNELS.map((c) => (
-            <option key={c.value} value={c.value}>
-              {c.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value as Status)}
-          className="rounded-lg bg-background border border-input px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          {STATUSES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+        {notFound ? (
+          <div className="p-8 text-center space-y-3">
+            <p className="text-sm opacity-70">Cette carte est introuvable.</p>
+            <button
+              onClick={onClose}
+              className="rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted"
+            >
+              Fermer
+            </button>
+          </div>
+        ) : !post ? (
+          <div className="p-10 text-center text-sm opacity-60">Chargement…</div>
+        ) : (
+          <>
+            {/* Barre d'actions */}
+            <div className="flex items-center justify-between gap-2 px-5 pt-4 flex-wrap">
+              <span className="text-xs opacity-60">
+                {saving === "saving" && "Enregistrement…"}
+                {saving === "saved" && <em>Enregistré</em>}
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={handleSave}
+                  className="inline-flex items-center gap-2 rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted transition-colors"
+                >
+                  <Save className="h-4 w-4" /> Enregistrer
+                </button>
+                <button
+                  onClick={async () => {
+                    await handleSave();
+                    setShowPublish(true);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 transition-opacity"
+                >
+                  <Send className="h-4 w-4" /> Publier ou programmer
+                </button>
+                <button
+                  onClick={onClose}
+                  aria-label="Fermer"
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-lg hover:bg-muted"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-5 md:p-8 space-y-5">
+              {post.video_url && (
+                <div className="rounded-xl overflow-hidden bg-muted/40 border border-border">
+                  <video
+                    src={post.video_url}
+                    controls
+                    playsInline
+                    className="w-full max-h-[420px] object-contain bg-black"
+                  />
+                </div>
+              )}
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Titre du post"
+                className="w-full bg-transparent border-0 outline-none text-3xl md:text-4xl placeholder:opacity-40"
+                style={{ fontFamily: "var(--font-display, 'Cormorant Garamond', serif)" }}
+              />
+              <textarea
+                ref={contentRef}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Écrivez ici votre contenu, long ou court…"
+                rows={16}
+                className="w-full bg-transparent border-0 outline-none text-base leading-relaxed resize-y placeholder:opacity-40"
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border/60">
+                <Field label="Canal">
+                  <select
+                    value={channel}
+                    onChange={(e) => setChannel(e.target.value)}
+                    className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">— Choisir —</option>
+                    {CHANNELS.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Pilier éditorial (facultatif)">
+                  <select
+                    value={pillarId}
+                    onChange={(e) => setPillarId(e.target.value)}
+                    className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">— Aucun —</option>
+                    {pillars.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Statut">
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as Status)}
+                    className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {STATUSES.map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Date de publication">
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                    className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </Field>
+              </div>
+
+              {willLeaveBoard && (
+                <p className="inline-flex items-center gap-2 text-xs text-primary bg-primary/10 rounded-lg px-3 py-2">
+                  <CalendarClock className="h-3.5 w-3.5" />
+                  <em>
+                    En enregistrant, cette carte quitte le tableau et se range dans le calendrier
+                    éditorial.
+                  </em>
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="flex justify-end gap-1 pt-1">
-        <button
-          onClick={onCancel}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs hover:bg-muted transition-colors"
-        >
-          <X className="h-3.5 w-3.5" /> Annuler
-        </button>
-        <button
-          onClick={() =>
-            onSave({
-              title: title.trim() || idea.title,
-              note,
-              pillar_id: pillarId || null,
-              channel: (channel || null) as Channel | null,
-              status,
-            })
-          }
-          className="inline-flex items-center gap-1 rounded-lg bg-primary text-primary-foreground px-2 py-1.5 text-xs hover:opacity-90 transition-opacity"
-        >
-          <Check className="h-3.5 w-3.5" /> Enregistrer
-        </button>
-      </div>
+      {showPublish && post && (
+        <PublishDialog
+          post={{
+            id: post.id,
+            title,
+            channel: (channel || null) as string | null,
+            scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+          }}
+          userId={userId}
+          onClose={() => setShowPublish(false)}
+          onPublished={(res?: { status?: string; scheduled_at?: string | null }) => {
+            if (res?.status) setStatus(res.status as Status);
+            if (res?.scheduled_at) setScheduledAt(toLocalInput(res.scheduled_at));
+            setShowPublish(false);
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="space-y-1.5 block">
+      <span className="text-xs uppercase tracking-[0.15em] opacity-70">{label}</span>
+      {children}
+    </label>
   );
 }

@@ -14,7 +14,6 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedTimingRouteImport } from './routes/_authenticated/timing'
-import { Route as AuthenticatedStudioRouteImport } from './routes/_authenticated/studio'
 import { Route as AuthenticatedStrategieRouteImport } from './routes/_authenticated/strategie'
 import { Route as AuthenticatedStatistiquesRouteImport } from './routes/_authenticated/statistiques'
 import { Route as AuthenticatedReglagesRouteImport } from './routes/_authenticated/reglages'
@@ -48,11 +47,6 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedTimingRoute = AuthenticatedTimingRouteImport.update({
   id: '/timing',
   path: '/timing',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedStudioRoute = AuthenticatedStudioRouteImport.update({
-  id: '/studio',
-  path: '/studio',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedStrategieRoute = AuthenticatedStrategieRouteImport.update({
@@ -122,7 +116,6 @@ export interface FileRoutesByFullPath {
   '/reglages': typeof AuthenticatedReglagesRoute
   '/statistiques': typeof AuthenticatedStatistiquesRoute
   '/strategie': typeof AuthenticatedStrategieRoute
-  '/studio': typeof AuthenticatedStudioRoute
   '/timing': typeof AuthenticatedTimingRoute
 }
 export interface FileRoutesByTo {
@@ -139,7 +132,6 @@ export interface FileRoutesByTo {
   '/reglages': typeof AuthenticatedReglagesRoute
   '/statistiques': typeof AuthenticatedStatistiquesRoute
   '/strategie': typeof AuthenticatedStrategieRoute
-  '/studio': typeof AuthenticatedStudioRoute
   '/timing': typeof AuthenticatedTimingRoute
 }
 export interface FileRoutesById {
@@ -158,7 +150,6 @@ export interface FileRoutesById {
   '/_authenticated/reglages': typeof AuthenticatedReglagesRoute
   '/_authenticated/statistiques': typeof AuthenticatedStatistiquesRoute
   '/_authenticated/strategie': typeof AuthenticatedStrategieRoute
-  '/_authenticated/studio': typeof AuthenticatedStudioRoute
   '/_authenticated/timing': typeof AuthenticatedTimingRoute
 }
 export interface FileRouteTypes {
@@ -177,7 +168,6 @@ export interface FileRouteTypes {
     | '/reglages'
     | '/statistiques'
     | '/strategie'
-    | '/studio'
     | '/timing'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -194,7 +184,6 @@ export interface FileRouteTypes {
     | '/reglages'
     | '/statistiques'
     | '/strategie'
-    | '/studio'
     | '/timing'
   id:
     | '__root__'
@@ -212,7 +201,6 @@ export interface FileRouteTypes {
     | '/_authenticated/reglages'
     | '/_authenticated/statistiques'
     | '/_authenticated/strategie'
-    | '/_authenticated/studio'
     | '/_authenticated/timing'
   fileRoutesById: FileRoutesById
 }
@@ -258,13 +246,6 @@ declare module '@tanstack/react-router' {
       path: '/timing'
       fullPath: '/timing'
       preLoaderRoute: typeof AuthenticatedTimingRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/studio': {
-      id: '/_authenticated/studio'
-      path: '/studio'
-      fullPath: '/studio'
-      preLoaderRoute: typeof AuthenticatedStudioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/strategie': {
@@ -351,7 +332,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReglagesRoute: typeof AuthenticatedReglagesRoute
   AuthenticatedStatistiquesRoute: typeof AuthenticatedStatistiquesRoute
   AuthenticatedStrategieRoute: typeof AuthenticatedStrategieRoute
-  AuthenticatedStudioRoute: typeof AuthenticatedStudioRoute
   AuthenticatedTimingRoute: typeof AuthenticatedTimingRoute
 }
 
@@ -366,7 +346,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReglagesRoute: AuthenticatedReglagesRoute,
   AuthenticatedStatistiquesRoute: AuthenticatedStatistiquesRoute,
   AuthenticatedStrategieRoute: AuthenticatedStrategieRoute,
-  AuthenticatedStudioRoute: AuthenticatedStudioRoute,
   AuthenticatedTimingRoute: AuthenticatedTimingRoute,
 }
 

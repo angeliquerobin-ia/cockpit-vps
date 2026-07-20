@@ -72,7 +72,7 @@ function RecyclagePage() {
       .from("posts")
       .update({ location: "creation", status: "en_redaction" } as any)
       .eq("id", id);
-    navigate({ to: "/studio", search: { post: id } });
+    navigate({ to: "/idees", search: { post: id } });
   }
 
   const filtered = rows.filter((r) => {

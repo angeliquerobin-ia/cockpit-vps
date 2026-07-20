@@ -284,6 +284,33 @@ export type Database = {
         }
         Relationships: []
       }
+      board_columns: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_pillars: {
         Row: {
           channel: Database["public"]["Enums"]["pillar_channel"] | null
@@ -366,6 +393,8 @@ export type Database = {
       }
       posts: {
         Row: {
+          board_column_id: string | null
+          board_position: number
           channel: Database["public"]["Enums"]["pillar_channel"] | null
           content: string
           created_at: string
@@ -388,6 +417,8 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          board_column_id?: string | null
+          board_position?: number
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
           content?: string
           created_at?: string
@@ -410,6 +441,8 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          board_column_id?: string | null
+          board_position?: number
           channel?: Database["public"]["Enums"]["pillar_channel"] | null
           content?: string
           created_at?: string
