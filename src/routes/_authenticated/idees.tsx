@@ -544,6 +544,7 @@ function StudioCreationPage() {
                           key={post.id}
                           post={post}
                           channelName={channelLabel(post.channel)}
+                          pillar={post.pillar_id ? pillarById[post.pillar_id] : undefined}
                           dragging={draggedCardId === post.id}
                           showDropLine={
                             dropTarget?.col === key && dropTarget.index === index && !!draggedCardId
@@ -621,6 +622,7 @@ function StudioCreationPage() {
 function PostCard({
   post,
   channelName,
+  pillar,
   dragging,
   showDropLine,
   onDragStart,
@@ -631,6 +633,7 @@ function PostCard({
 }: {
   post: Post;
   channelName: string | null;
+  pillar?: Pillar;
   dragging: boolean;
   showDropLine: boolean;
   onDragStart: (e: React.DragEvent) => void;
@@ -655,6 +658,14 @@ function PostCard({
       >
         <div className="flex items-start gap-2">
           <GripVertical className="h-4 w-4 mt-0.5 opacity-30 shrink-0 cursor-grab active:cursor-grabbing" />
+          {pillar && (
+            <span
+              className="h-2.5 w-2.5 rounded-full shrink-0 mt-1"
+              style={{ backgroundColor: pillar.color }}
+              title={pillar.name}
+              aria-hidden
+            />
+          )}
           <h3 className="text-sm leading-snug flex-1">
             {post.title.trim() || <span className="opacity-50 italic">Sans titre</span>}
           </h3>
@@ -685,6 +696,14 @@ function PostCard({
         {preview && <p className="text-xs opacity-70 leading-relaxed pl-6 line-clamp-3">{preview}</p>}
 
         <div className="flex items-center gap-1.5 flex-wrap pl-6">
+          {pillar && (
+            <span
+              className="inline-block text-[10px] px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: pillar.color + "33", color: pillar.color }}
+            >
+              {pillar.name}
+            </span>
+          )}
           {channelName && (
             <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-popover text-foreground/70">
               {channelName}
