@@ -7,11 +7,9 @@ import {
   Plus,
   CalendarDays,
   X,
-  Send,
   Pencil,
   Film,
 } from "lucide-react";
-import { PublishDialog } from "@/components/publish-dialog";
 
 type Channel =
   | "linkedin"
@@ -91,17 +89,6 @@ function CalendarPage() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overDay, setOverDay] = useState<string | null>(null);
   const [openedPost, setOpenedPost] = useState<Post | null>(null);
-  const [publishPost, setPublishPost] = useState<Post | null>(null);
-
-  async function reloadPosts(uid: string) {
-    const { data } = await supabase
-      .from("posts")
-      .select("id,title,channel,pillar_id,scheduled_at,video_url")
-      .eq("user_id", uid)
-      .is("deleted_at", null)
-      .not("scheduled_at", "is", null);
-    setPosts((data ?? []) as Post[]);
-  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -397,7 +384,7 @@ function CalendarPage() {
         </div>
       )}
 
-      {openedPost && !publishPost && (
+      {openedPost && (
         <PostCardModal
           post={openedPost}
           pillar={
@@ -406,25 +393,6 @@ function CalendarPage() {
           onClose={() => setOpenedPost(null)}
           onOpenStudio={() => {
             navigate({ to: "/idees", search: { post: openedPost.id } });
-          }}
-          onPublish={() => setPublishPost(openedPost)}
-        />
-      )}
-
-      {publishPost && userId && (
-        <PublishDialog
-          post={{
-            id: publishPost.id,
-            title: publishPost.title,
-            channel: publishPost.channel,
-            scheduled_at: publishPost.scheduled_at,
-          }}
-          userId={userId}
-          onClose={() => setPublishPost(null)}
-          onPublished={async () => {
-            setPublishPost(null);
-            setOpenedPost(null);
-            if (userId) await reloadPosts(userId);
           }}
         />
       )}
@@ -437,13 +405,11 @@ function PostCardModal({
   pillar,
   onClose,
   onOpenStudio,
-  onPublish,
 }: {
   post: Post;
   pillar?: Pillar;
   onClose: () => void;
   onOpenStudio: () => void;
-  onPublish: () => void;
 }) {
   const when = post.scheduled_at
     ? new Date(post.scheduled_at).toLocaleString("fr-FR", {
@@ -511,15 +477,9 @@ function PostCardModal({
           <div className="flex flex-wrap gap-2 pt-1">
             <button
               onClick={onOpenStudio}
-              className="inline-flex items-center gap-2 rounded-lg border border-input px-3 py-2 text-sm hover:bg-muted transition-colors"
-            >
-              <Pencil className="h-4 w-4" /> Ouvrir l'éditeur
-            </button>
-            <button
-              onClick={onPublish}
               className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm hover:opacity-90 transition-opacity"
             >
-              <Send className="h-4 w-4" /> Publier ou programmer
+              <Pencil className="h-4 w-4" /> Ouvrir l'éditeur
             </button>
           </div>
         </div>

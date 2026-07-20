@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { PublishDialog } from "@/components/publish-dialog";
 import {
   Plus,
   Pencil,
@@ -12,7 +11,6 @@ import {
   Sparkles,
   ListPlus,
   Save,
-  Send,
   CalendarClock,
 } from "lucide-react";
 
@@ -609,7 +607,6 @@ function StudioCreationPage() {
       {postParam && userId && (
         <PostEditorModal
           postId={postParam}
-          userId={userId}
           pillars={pillars}
           onClose={() => {
             navigate({ to: "/idees", search: { post: undefined } });
@@ -710,12 +707,10 @@ function toLocalInput(iso: string) {
 
 function PostEditorModal({
   postId,
-  userId,
   pillars,
   onClose,
 }: {
   postId: string;
-  userId: string;
   pillars: Pillar[];
   onClose: () => void;
 }) {
@@ -728,7 +723,6 @@ function PostEditorModal({
   const [status, setStatus] = useState<Status>("en_redaction");
   const [scheduledAt, setScheduledAt] = useState<string>("");
   const [saving, setSaving] = useState<"idle" | "saving" | "saved">("idle");
-  const [showPublish, setShowPublish] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -812,18 +806,9 @@ function PostEditorModal({
               <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={handleSave}
-                  className="inline-flex items-center gap-2 rounded-lg border border-input px-4 py-2 text-sm hover:bg-muted transition-colors"
-                >
-                  <Save className="h-4 w-4" /> Enregistrer
-                </button>
-                <button
-                  onClick={async () => {
-                    await handleSave();
-                    setShowPublish(true);
-                  }}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm hover:opacity-90 transition-opacity"
                 >
-                  <Send className="h-4 w-4" /> Publier ou programmer
+                  <Save className="h-4 w-4" /> Enregistrer
                 </button>
                 <button
                   onClick={onClose}
@@ -927,24 +912,6 @@ function PostEditorModal({
           </>
         )}
       </div>
-
-      {showPublish && post && (
-        <PublishDialog
-          post={{
-            id: post.id,
-            title,
-            channel: (channel || null) as string | null,
-            scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
-          }}
-          userId={userId}
-          onClose={() => setShowPublish(false)}
-          onPublished={(res?: { status?: string; scheduled_at?: string | null }) => {
-            if (res?.status) setStatus(res.status as Status);
-            if (res?.scheduled_at) setScheduledAt(toLocalInput(res.scheduled_at));
-            setShowPublish(false);
-          }}
-        />
-      )}
     </div>
   );
 }
