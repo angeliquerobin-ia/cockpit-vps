@@ -109,7 +109,6 @@ function StudioCreationPage() {
   const [editingColId, setEditingColId] = useState<string | null>(null);
   const [editingColName, setEditingColName] = useState("");
   const [newColName, setNewColName] = useState("");
-  const [newColColor, setNewColColor] = useState(COLUMN_COLORS[0]);
   const [addingCol, setAddingCol] = useState(false);
 
   // DnD cartes
@@ -208,15 +207,15 @@ function StudioCreationPage() {
     if (!userId || !newColName.trim()) return;
     setAddingCol(true);
     const position = columns.length;
+    const color = COLUMN_COLORS[columns.length % COLUMN_COLORS.length];
     const { data } = await supabase
       .from("board_columns")
-      .insert({ user_id: userId, name: newColName.trim(), position, color: newColColor } as any)
+      .insert({ user_id: userId, name: newColName.trim(), position, color } as any)
       .select("id,name,position,color")
       .single();
     if (data) {
       setColumns((prev) => [...prev, data as BoardColumn]);
       setNewColName("");
-      setNewColColor(COLUMN_COLORS[(columns.length + 1) % COLUMN_COLORS.length]);
     }
     setAddingCol(false);
   }
@@ -623,29 +622,6 @@ function StudioCreationPage() {
                 placeholder="Nom de la colonne"
                 className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {COLUMN_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setNewColColor(c)}
-                    aria-label={`Couleur ${c}`}
-                    className={`h-6 w-6 rounded-full transition-transform ${
-                      newColColor === c ? "ring-2 ring-foreground/60 scale-110" : ""
-                    }`}
-                    style={{ backgroundColor: c }}
-                  />
-                ))}
-                <label className="inline-flex items-center cursor-pointer" title="Couleur personnalisée">
-                  <input
-                    type="color"
-                    value={newColColor}
-                    onChange={(e) => setNewColColor(e.target.value)}
-                    aria-label="Couleur personnalisée"
-                    className="h-6 w-6 rounded-full border border-border bg-transparent cursor-pointer appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0"
-                  />
-                </label>
-              </div>
               <button
                 type="submit"
                 disabled={addingCol || !newColName.trim()}
