@@ -33,7 +33,19 @@ type Status = "idee" | "en_redaction" | "pret" | "programme" | "publie";
 
 type Pillar = { id: string; name: string; color: string };
 
-type BoardColumn = { id: string; name: string; position: number };
+type BoardColumn = { id: string; name: string; position: number; color: string };
+
+const COLUMN_COLORS = [
+  "#c98a6b",
+  "#6f7a5b",
+  "#a07c9c",
+  "#cdb48e",
+  "#5b6e7a",
+  "#b87b5a",
+  "#9c6b4f",
+  "#7a8a6f",
+];
+const UNSORTED_COLOR = "#8a8276";
 
 type Post = {
   id: string;
@@ -97,6 +109,7 @@ function StudioCreationPage() {
   const [editingColId, setEditingColId] = useState<string | null>(null);
   const [editingColName, setEditingColName] = useState("");
   const [newColName, setNewColName] = useState("");
+  const [newColColor, setNewColColor] = useState(COLUMN_COLORS[0]);
   const [addingCol, setAddingCol] = useState(false);
 
   // DnD cartes
@@ -120,7 +133,7 @@ function StudioCreationPage() {
         .order("created_at", { ascending: true }),
       supabase
         .from("board_columns")
-        .select("id,name,position")
+        .select("id,name,position,color")
         .eq("user_id", uid)
         .order("position", { ascending: true }),
       supabase
@@ -197,12 +210,13 @@ function StudioCreationPage() {
     const position = columns.length;
     const { data } = await supabase
       .from("board_columns")
-      .insert({ user_id: userId, name: newColName.trim(), position } as any)
-      .select("id,name,position")
+      .insert({ user_id: userId, name: newColName.trim(), position, color: newColColor } as any)
+      .select("id,name,position,color")
       .single();
     if (data) {
       setColumns((prev) => [...prev, data as BoardColumn]);
       setNewColName("");
+      setNewColColor(COLUMN_COLORS[(columns.length + 1) % COLUMN_COLORS.length]);
     }
     setAddingCol(false);
   }
@@ -213,6 +227,11 @@ function StudioCreationPage() {
     if (!trimmed) return;
     setColumns((prev) => prev.map((c) => (c.id === id ? { ...c, name: trimmed } : c)));
     await supabase.from("board_columns").update({ name: trimmed }).eq("id", id);
+  }
+
+  async function recolorColumn(id: string, color: string) {
+    setColumns((prev) => prev.map((c) => (c.id === id ? { ...c, color } : c)));
+    await supabase.from("board_columns").update({ color }).eq("id", id);
   }
 
   async function deleteColumn(id: string) {
@@ -282,8 +301,6 @@ function StudioCreationPage() {
     );
   }
 
-  const pillarById = useMemo(() => Object.fromEntries(pillars.map((p) => [p.id, p])), [pillars]);
-
   const filteredPosts = useMemo(() => {
     const q = search.trim().toLowerCase();
     return posts.filter((p) => {
@@ -296,10 +313,11 @@ function StudioCreationPage() {
     });
   }, [posts, fChannel, search]);
 
-  const renderColumns: { id: string | null; name: string; fixed: boolean }[] = [
-    { id: null, name: "À ranger", fixed: true },
-    ...columns.map((c) => ({ id: c.id, name: c.name, fixed: false })),
+  const renderColumns: { id: string | null; name: string; color: string; fixed: boolean }[] = [
+    { id: null, name: "À ranger", color: UNSORTED_COLOR, fixed: true },
+    ...columns.map((c) => ({ id: c.id, name: c.name, color: c.color, fixed: false })),
   ];
+  const colorByKey = new Map(renderColumns.map((c) => [colKeyOf(c.id), c.color]));
 
   const postsByCol = useMemo(() => {
     const map = new Map<string, Post[]>();
@@ -488,10 +506,25 @@ function StudioCreationPage() {
                       setDragOverColId(null);
                     }}
                   >
-                    {!col.fixed ? (
+                    {!col.fixed && (
                       <GripVertical className="h-4 w-4 opacity-30 shrink-0 cursor-grab active:cursor-grabbing" />
+                    )}
+                    {col.fixed ? (
+                      <span
+                        className="h-3.5 w-3.5 rounded-full shrink-0"
+                        style={{ backgroundColor: col.color }}
+                        aria-hidden
+                      />
                     ) : (
-                      <span className="w-1.5 h-4 rounded-full bg-primary/40 shrink-0" aria-hidden />
+                      <input
+                        type="color"
+                        value={col.color}
+                        onChange={(e) => recolorColumn(col.id!, e.target.value)}
+                        aria-label="Couleur de la colonne"
+                        title="Choisir la couleur de la colonne"
+                        className="h-3.5 w-3.5 rounded-full shrink-0 border-0 p-0 bg-transparent cursor-pointer appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0"
+                        style={{ backgroundColor: col.color }}
+                      />
                     )}
                     {!col.fixed && editingColId === col.id ? (
                       <input
@@ -544,7 +577,7 @@ function StudioCreationPage() {
                           key={post.id}
                           post={post}
                           channelName={channelLabel(post.channel)}
-                          pillar={post.pillar_id ? pillarById[post.pillar_id] : undefined}
+                          columnColor={colorByKey.get(key) ?? UNSORTED_COLOR}
                           dragging={draggedCardId === post.id}
                           showDropLine={
                             dropTarget?.col === key && dropTarget.index === index && !!draggedCardId
@@ -590,6 +623,29 @@ function StudioCreationPage() {
                 placeholder="Nom de la colonne"
                 className="w-full rounded-lg bg-background border border-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {COLUMN_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setNewColColor(c)}
+                    aria-label={`Couleur ${c}`}
+                    className={`h-6 w-6 rounded-full transition-transform ${
+                      newColColor === c ? "ring-2 ring-foreground/60 scale-110" : ""
+                    }`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+                <label className="inline-flex items-center cursor-pointer" title="Couleur personnalisée">
+                  <input
+                    type="color"
+                    value={newColColor}
+                    onChange={(e) => setNewColColor(e.target.value)}
+                    aria-label="Couleur personnalisée"
+                    className="h-6 w-6 rounded-full border border-border bg-transparent cursor-pointer appearance-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0"
+                  />
+                </label>
+              </div>
               <button
                 type="submit"
                 disabled={addingCol || !newColName.trim()}
@@ -622,7 +678,7 @@ function StudioCreationPage() {
 function PostCard({
   post,
   channelName,
-  pillar,
+  columnColor,
   dragging,
   showDropLine,
   onDragStart,
@@ -633,7 +689,7 @@ function PostCard({
 }: {
   post: Post;
   channelName: string | null;
-  pillar?: Pillar;
+  columnColor: string;
   dragging: boolean;
   showDropLine: boolean;
   onDragStart: (e: React.DragEvent) => void;
@@ -658,14 +714,11 @@ function PostCard({
       >
         <div className="flex items-start gap-2">
           <GripVertical className="h-4 w-4 mt-0.5 opacity-30 shrink-0 cursor-grab active:cursor-grabbing" />
-          {pillar && (
-            <span
-              className="h-2.5 w-2.5 rounded-full shrink-0 mt-1"
-              style={{ backgroundColor: pillar.color }}
-              title={pillar.name}
-              aria-hidden
-            />
-          )}
+          <span
+            className="h-2.5 w-2.5 rounded-full shrink-0 mt-1"
+            style={{ backgroundColor: columnColor }}
+            aria-hidden
+          />
           <h3 className="text-sm leading-snug flex-1">
             {post.title.trim() || <span className="opacity-50 italic">Sans titre</span>}
           </h3>
@@ -696,14 +749,6 @@ function PostCard({
         {preview && <p className="text-xs opacity-70 leading-relaxed pl-6 line-clamp-3">{preview}</p>}
 
         <div className="flex items-center gap-1.5 flex-wrap pl-6">
-          {pillar && (
-            <span
-              className="inline-block text-[10px] px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: pillar.color + "33", color: pillar.color }}
-            >
-              {pillar.name}
-            </span>
-          )}
           {channelName && (
             <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-popover text-foreground/70">
               {channelName}

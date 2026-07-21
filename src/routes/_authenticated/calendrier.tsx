@@ -18,13 +18,15 @@ type Channel =
   | "podcast"
   | "substack";
 
-type Pillar = { id: string; name: string; color: string };
+type BoardColumn = { id: string; name: string; color: string };
+
+const UNSORTED_COLOR = "#8a8276";
 
 type Post = {
   id: string;
   title: string;
   channel: Channel | null;
-  pillar_id: string | null;
+  board_column_id: string | null;
   scheduled_at: string | null;
   video_url: string | null;
 };
@@ -78,7 +80,7 @@ function fmtMonth(d: Date) {
 function CalendarPage() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string | null>(null);
-  const [pillars, setPillars] = useState<Pillar[]>([]);
+  const [columns, setColumns] = useState<BoardColumn[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [view, setView] = useState<"month" | "week">("month");
   const [cursor, setCursor] = useState(() => {
@@ -97,26 +99,26 @@ function CalendarPage() {
   useEffect(() => {
     if (!userId) return;
     (async () => {
-      const [p, ps] = await Promise.all([
+      const [c, ps] = await Promise.all([
         supabase
-          .from("content_pillars")
+          .from("board_columns")
           .select("id,name,color")
           .eq("user_id", userId),
         supabase
           .from("posts")
-          .select("id,title,channel,pillar_id,scheduled_at,video_url")
+          .select("id,title,channel,board_column_id,scheduled_at,video_url")
           .eq("user_id", userId)
           .is("deleted_at", null)
           .not("scheduled_at", "is", null),
       ]);
-      setPillars((p.data ?? []) as Pillar[]);
+      setColumns((c.data ?? []) as BoardColumn[]);
       setPosts((ps.data ?? []) as Post[]);
     })();
   }, [userId]);
 
-  const pillarById = useMemo(
-    () => Object.fromEntries(pillars.map((p) => [p.id, p])),
-    [pillars],
+  const columnById = useMemo(
+    () => Object.fromEntries(columns.map((c) => [c.id, c])),
+    [columns],
   );
 
   const days = useMemo(() => {
@@ -308,8 +310,8 @@ function CalendarPage() {
 
                 <div className="flex flex-col gap-1 flex-1">
                   {dayPosts.map((p) => {
-                    const pillar = p.pillar_id ? pillarById[p.pillar_id] : undefined;
-                    const color = pillar?.color ?? "#cdb48e";
+                    const column = p.board_column_id ? columnById[p.board_column_id] : undefined;
+                    const color = column?.color ?? UNSORTED_COLOR;
                     return (
                       <button
                         key={p.id}
@@ -319,7 +321,7 @@ function CalendarPage() {
                         onClick={() =>
                           setOpenedPost(p)
                         }
-                        title={`${pillar?.name ?? "À ranger"}${p.channel ? " · " + CHANNEL_LABEL[p.channel] : ""}`}
+                        title={`${column?.name ?? "À ranger"}${p.channel ? " · " + CHANNEL_LABEL[p.channel] : ""}`}
                         className="text-left rounded-md px-2 py-1.5 text-xs leading-snug cursor-grab active:cursor-grabbing hover:brightness-95 transition-all"
                         style={{
                           backgroundColor: color + "26",
@@ -359,7 +361,7 @@ function CalendarPage() {
         </div>
       </div>
 
-      {pillars.length === 0 && posts.length === 0 && (
+      {posts.length === 0 && (
         <div className="bg-card rounded-2xl p-8 shadow-[var(--shadow-soft)] text-center space-y-2">
           <CalendarDays className="h-7 w-7 mx-auto opacity-40" />
           <p className="text-sm opacity-70">
@@ -369,16 +371,16 @@ function CalendarPage() {
         </div>
       )}
 
-      {pillars.length > 0 && (
+      {columns.length > 0 && (
         <div className="flex items-center gap-3 flex-wrap text-xs opacity-80">
-          <span className="uppercase tracking-[0.15em] opacity-60">Piliers</span>
-          {pillars.map((p) => (
-            <span key={p.id} className="inline-flex items-center gap-1.5">
+          <span className="uppercase tracking-[0.15em] opacity-60">Colonnes</span>
+          {columns.map((c) => (
+            <span key={c.id} className="inline-flex items-center gap-1.5">
               <span
                 className="h-3 w-3 rounded-full"
-                style={{ backgroundColor: p.color }}
+                style={{ backgroundColor: c.color }}
               />
-              {p.name}
+              {c.name}
             </span>
           ))}
         </div>
@@ -387,8 +389,8 @@ function CalendarPage() {
       {openedPost && (
         <PostCardModal
           post={openedPost}
-          pillar={
-            openedPost.pillar_id ? pillarById[openedPost.pillar_id] : undefined
+          column={
+            openedPost.board_column_id ? columnById[openedPost.board_column_id] : undefined
           }
           onClose={() => setOpenedPost(null)}
           onOpenStudio={() => {
@@ -402,12 +404,12 @@ function CalendarPage() {
 
 function PostCardModal({
   post,
-  pillar,
+  column,
   onClose,
   onOpenStudio,
 }: {
   post: Post;
-  pillar?: Pillar;
+  column?: BoardColumn;
   onClose: () => void;
   onOpenStudio: () => void;
 }) {
@@ -431,7 +433,7 @@ function PostCardModal({
       >
         <div
           className="h-1.5"
-          style={{ backgroundColor: pillar?.color ?? "#cdb48e" }}
+          style={{ backgroundColor: column?.color ?? UNSORTED_COLOR }}
         />
         <div className="p-6 space-y-4">
           <div className="flex items-start justify-between gap-3">
@@ -450,15 +452,15 @@ function PostCardModal({
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            {pillar && (
+            {column && (
               <span
                 className="text-xs px-2 py-0.5 rounded-full"
                 style={{
-                  backgroundColor: pillar.color + "33",
-                  color: pillar.color,
+                  backgroundColor: column.color + "33",
+                  color: column.color,
                 }}
               >
-                {pillar.name}
+                {column.name}
               </span>
             )}
             {post.channel && (
